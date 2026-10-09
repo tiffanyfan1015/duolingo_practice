@@ -1,0 +1,14 @@
+data/
+__pycache__/
+.env
+.env.*
+*.har
+*token*
+.deps/
+web/data.json
+artifacts/
+node_modules/
+dist/
+.wrangler/
+.dev.vars
+.dev.vars.*

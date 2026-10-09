@@ -1,0 +1,278 @@
+@media (min-width: 1500px) {
+  main {
+    margin-left: 270px;
+  }
+}
+@media (max-width: 1100px) {
+  .sidebar {
+    width: 200px;
+    padding: 30px 18px;
+  }
+  main {
+    margin-left: 200px;
+    padding: 0 28px;
+  }
+  .stats > div {
+    padding: 20px;
+  }
+  .stats {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+  .stat-illustration {
+    display: none !important;
+  }
+  .toolbar {
+    flex-wrap: wrap;
+  }
+  .unit-picker {
+    flex-basis: 100%;
+  }
+  h1 {
+    font-size: 27px;
+  }
+  .intro {
+    align-items: start;
+    flex-direction: column;
+  }
+}
+@media (max-width: 700px) {
+  .sidebar {
+    position: static;
+    width: auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    padding: 18px;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .brand {
+    font-size: 20px;
+    flex: 1;
+  }
+  .brand-icon {
+    width: 35px;
+    height: 35px;
+    font-size: 18px;
+  }
+  .brand small,
+  .side-label,
+  .side-active,
+  .side-note,
+  .storage-note {
+    display: none;
+  }
+  .side-note + .side-action {
+    margin-top: 0;
+  }
+  .side-action {
+    font-size: 10px;
+    padding: 8px 3px;
+  }
+  .brand span:last-child {
+    white-space: nowrap;
+  }
+  main {
+    margin: 0;
+    padding: 0 16px;
+  }
+  header {
+    height: 53px;
+    font-size: 10px;
+  }
+  .local-badge {
+    font-size: 9px;
+    padding: 5px 8px;
+  }
+  .breadcrumb span {
+    padding: 0 5px;
+  }
+  .intro {
+    padding: 26px 0 22px;
+    gap: 20px;
+  }
+  .eyebrow {
+    font-size: 8px;
+  }
+  h1 {
+    font-size: 25px;
+    margin: 12px 0;
+  }
+  .intro p {
+    font-size: 11px;
+  }
+  .language-switch {
+    width: 100%;
+  }
+  .language-switch button {
+    flex: 1;
+    padding: 12px;
+  }
+  .stats {
+    margin-bottom: 20px;
+    border-radius: 12px;
+  }
+  .stats > div {
+    padding: 16px 12px;
+  }
+  .stats strong {
+    font-size: 28px;
+  }
+  .stats span:not(.big-glyph) {
+    font-size: 10px;
+  }
+  .stats small {
+    font-size: 8px;
+    line-height: 1.6;
+    display: block;
+  }
+  .workspace {
+    padding: 18px 14px;
+    border-radius: 12px;
+  }
+  .workspace-heading {
+    gap: 8px;
+  }
+  h2 {
+    font-size: 17px;
+  }
+  .workspace-heading p {
+    font-size: 10px;
+  }
+  .toggle {
+    font-size: 10px;
+    white-space: nowrap;
+  }
+  .modes {
+    gap: 0;
+    justify-content: space-between;
+    margin-top: 15px;
+  }
+  .modes button {
+    font-size: 12px;
+    padding: 14px 7px;
+  }
+  .toolbar {
+    margin: 18px 0;
+    gap: 9px;
+  }
+  .toolbar > select {
+    font-size: 11px;
+    padding: 13px 8px;
+    max-width: 105px;
+  }
+  .search input {
+    font-size: 11px;
+    padding: 12px 6px;
+  }
+  .list-tools {
+    font-size: 10px;
+  }
+  .word-table thead {
+    display: none;
+  }
+  .word-table,
+  .word-table tbody {
+    display: block;
+  }
+  .word-table tr {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    position: relative;
+    border-bottom: 1px solid var(--line);
+    padding: 16px 0;
+    gap: 7px 8px;
+  }
+  .word-table td {
+    display: block;
+    padding: 0;
+    border: 0;
+  }
+  .word-table td:nth-child(1) {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .word-table td:nth-child(2) {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .word-table td:nth-child(3) {
+    grid-column: 1;
+    grid-row: 3;
+  }
+  .word-table td:nth-child(4) {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    align-self: center;
+  }
+  .word-title {
+    font-size: 19px;
+  }
+  .word-meta {
+    font-size: 9px;
+  }
+  .meaning {
+    font-size: 12px;
+  }
+  .tag {
+    font-size: 9px;
+    padding: 3px 6px;
+  }
+  .actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .icon-btn {
+    width: 38px;
+    height: 38px;
+  }
+  .reading {
+    font-size: 11px;
+  }
+  .pagination {
+    gap: 12px;
+  }
+  footer {
+    font-size: 9px;
+    gap: 10px;
+    line-height: 1.7;
+  }
+  .study-card {
+    padding: 25px 15px;
+  }
+  .study-card h3 {
+    font-size: 28px;
+  }
+  .answer-form {
+    flex-wrap: wrap;
+  }
+  .answer-form button {
+    width: 100%;
+  }
+  .study-actions {
+    gap: 8px;
+  }
+  .study-actions button {
+    padding: 13px 8px;
+  }
+  .practice-start {
+    padding: 35px 5px;
+  }
+  dialog {
+    padding: 24px;
+  }
+  .list-tools select {
+    font-size: 10px;
+  }
+}
+
+#list-options {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+@media (max-width: 700px) {
+  #list-options {
+    gap: 7px;
+  }
+}

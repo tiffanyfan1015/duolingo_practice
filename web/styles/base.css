@@ -1,0 +1,53 @@
+:root {
+  --green: #173e35;
+  --mint: #eaf0e5;
+  --ink: #263d35;
+  --muted: #7a857c;
+  --line: #e4e8df;
+  --paper: #fafbf7;
+  --orange: #c78146;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: Inter, "Segoe UI", "Microsoft JhengHei", sans-serif;
+  font-size: 14px;
+}
+button,
+input,
+select {
+  font: inherit;
+}
+button,
+a,
+label,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+button {
+  cursor: pointer;
+  border: 0;
+  background: none;
+  color: inherit;
+}
+button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid #a5ba81;
+  outline-offset: 3px;
+}
+button:hover {
+  filter: brightness(0.95);
+}
+[hidden] {
+  display: none !important;
+}

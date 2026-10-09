@@ -1,0 +1,7 @@
+/* Styles are ordered from foundations to responsive overrides. */
+@import url("./styles/base.css");
+@import url("./styles/layout.css");
+@import url("./styles/components.css");
+@import url("./styles/responsive.css");
+@import url("./styles/review.css");
+@import url("./styles/sync.css");

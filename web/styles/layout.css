@@ -1,0 +1,223 @@
+.sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 238px;
+  border-right: 1px solid var(--line);
+  padding: 38px 24px;
+  background: #f2f5ed;
+  display: flex;
+  flex-direction: column;
+}
+.brand {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  text-decoration: none;
+  color: var(--green);
+  font-size: 25px;
+  font-weight: 800;
+  letter-spacing: 3px;
+}
+.brand-icon {
+  display: grid;
+  place-items: center;
+  background: var(--green);
+  color: #f5f5df;
+  border-radius: 14px;
+  width: 46px;
+  height: 46px;
+  font-size: 23px;
+  transform: rotate(-5deg);
+}
+.brand small {
+  font-size: 10px;
+  font-weight: 400;
+  display: block;
+  letter-spacing: 1px;
+  margin-top: 5px;
+}
+.side-label {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 2px;
+  margin: 55px 8px 16px;
+}
+.side-active {
+  background: var(--green);
+  color: white;
+  text-align: left;
+  padding: 15px;
+  border-radius: 10px;
+}
+.side-note {
+  position: relative;
+  border: 1px solid #dbe3d1;
+  border-radius: 12px;
+  padding: 22px 18px;
+  margin-top: 38px;
+  overflow: hidden;
+}
+.side-note span {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--muted);
+}
+.side-note p {
+  font-family: Georgia, "Microsoft JhengHei", serif;
+  font-size: 20px;
+  line-height: 1.8;
+}
+.leaf {
+  position: absolute;
+  bottom: -22px;
+  right: -5px;
+  font-size: 110px;
+  color: #d7e2c8;
+  z-index: -0;
+  opacity: 0.7;
+}
+.side-action {
+  display: block;
+  text-align: left;
+  padding: 12px 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.side-note + .side-action {
+  margin-top: auto;
+}
+.storage-note {
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.8;
+  margin: 12px 6px 0;
+}
+main {
+  margin-left: 238px;
+  max-width: 1510px;
+  padding: 0 52px;
+}
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 86px;
+  border-bottom: 1px solid var(--line);
+  font-size: 11px;
+  color: var(--muted);
+}
+.breadcrumb span {
+  padding: 0 12px;
+  color: #bdc5b9;
+}
+.local-badge {
+  padding: 7px 12px;
+  background: #edf2e7;
+  border-radius: 20px;
+  color: #5d7557;
+}
+.intro {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 43px 0 30px;
+  gap: 20px;
+}
+.eyebrow {
+  font-size: 10px;
+  color: var(--orange);
+  letter-spacing: 2.4px;
+  font-weight: 700;
+}
+h1 {
+  font-size: 32px;
+  letter-spacing: 1px;
+  margin: 13px 0;
+}
+p {
+  line-height: 1.7;
+}
+.intro p {
+  color: var(--muted);
+  margin: 0;
+  font-size: 13px;
+}
+.language-switch {
+  display: flex;
+  border: 1px solid var(--line);
+  padding: 5px;
+  border-radius: 12px;
+  background: white;
+  gap: 4px;
+}
+.language-switch button {
+  padding: 12px 18px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.language-switch span {
+  margin-left: 8px;
+  font-size: 13px;
+}
+.language-switch .selected {
+  background: var(--green);
+  color: white;
+}
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1.15fr;
+  border: 1px solid var(--line);
+  background: white;
+  border-radius: 16px;
+  margin-bottom: 34px;
+  overflow: hidden;
+}
+.stats > div {
+  padding: 24px 28px;
+  border-right: 1px solid var(--line);
+}
+.stats span:not(.big-glyph) {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+.stats strong {
+  display: block;
+  font-size: 34px;
+  font-weight: 500;
+  margin: 10px 0 7px;
+  font-variant-numeric: tabular-nums;
+}
+.stats small {
+  font-size: 10px;
+  color: var(--muted);
+}
+.stats .stat-illustration {
+  background: var(--mint);
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.big-glyph {
+  font:
+    italic 62px Georgia,
+    serif;
+  color: #6e8964;
+  transform: rotate(-9deg);
+  line-height: 1.15;
+}
+.stat-illustration small {
+  font-size: 8px;
+  letter-spacing: 2px;
+  margin-top: 12px;
+}
+.workspace {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 27px;
+}
