@@ -1,11 +1,12 @@
 import { SyncError } from "./duolingo.mjs";
-export function courseState(profile, language) {
+import { languageName } from "../../web/src/domain/languages.mjs";
+export function courseState(profile, language, target = null) {
   const course = profile?.currentCourse;
-  if (!course || course.learningLanguage !== language)
+  if (!course || course.learningLanguage !== language || (target && (course.id !== target.courseId || course.fromLanguage !== target.fromLanguage)))
     throw new SyncError(
-      `請先在 Duolingo 切換到${language === "de" ? "德文" : "日文"}，再按同步。`,
+      `請先在 Duolingo 切換到所選的${languageName(language)}課程，再按同步。`,
     );
-  if (course.fromLanguage !== "zh" || !course.id)
+  if (!course.id || (!target && course.fromLanguage !== "zh"))
     throw new SyncError("目前只支援以中文學習的德文／日文課程。");
   const found = new Map();
   function add(id, levels, sessions) {
@@ -61,7 +62,7 @@ export function courseState(profile, language) {
   if (!skills.length || skills.length > 500)
     throw new SyncError("無法辨識已學技能，未猜測學習進度。");
   return {
-    course: { id: course.id, learningLanguage: language, fromLanguage: "zh" },
+    course: { id: course.id, learningLanguage: language, fromLanguage: course.fromLanguage },
     skills,
     units,
   };
@@ -157,7 +158,7 @@ export function transform(job, previous) {
       units,
       reading: prior?.reading || "",
       romaji: prior?.romaji || "",
-      readingPending: job.language === "ja" && !prior?.reading,
+      readingPending: (job.learningLanguage || job.language) === "ja" && !prior?.reading,
     };
   });
   const units = job.units
@@ -175,7 +176,9 @@ export function transform(job, previous) {
     });
   return {
     id: job.language,
-    name: job.language === "de" ? "德文" : "日文",
+    language: job.learningLanguage || job.language,
+    fromLanguage: job.course.fromLanguage,
+    name: languageName(job.learningLanguage || job.language),
     words,
     units,
     exportedAt: new Date().toISOString(),

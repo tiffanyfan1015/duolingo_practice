@@ -27,7 +27,7 @@ async function register(env, username) {
   return { cookie: response.headers.get("set-cookie").split(";")[0], user: (await response.json()).user };
 }
 const tokenFor = (sub) => "a." + btoa(JSON.stringify({ sub, exp: Date.now()/1000+3600 })) + ".synthetic";
-const profileFor = (sub) => ({ currentCourse: { id: "de-course", learningLanguage: "de", fromLanguage: "zh", skills: [{ id: "s" + sub, finishedLevels: 1 }], pathSectioned: [] } });
+const profileFor = (sub) => ({ courses: [{ id: "de-course", learningLanguage: "de", fromLanguage: "zh" }], currentCourse: { id: "de-course", learningLanguage: "de", fromLanguage: "zh", skills: [{ id: "s" + sub, finishedLevels: 1 }], pathSectioned: [] } });
 
 test("accounts fail closed, require invitation, isolate static private data and protect writes", async (t) => {
   const env = environment(t);
@@ -44,7 +44,7 @@ test("accounts fail closed, require invitation, isolate static private data and 
   assert.equal((await call(env, "/%64ata.json", undefined, alice)).status, 404);
   const catalog = await (await call(env, "/api/catalog", undefined, alice)).json();
   assert.equal(catalog.user.id, alice.user.id);
-  assert.deepEqual(catalog.courses.map((c) => c.words), [[], []]);
+  assert.deepEqual(catalog.courses, []);
   assert.equal((await call(env, "/api/account/register", { username: "ALICE", password, invite: env.REGISTRATION_CODE })).status, 409);
   const row = await env.DB.prepare("SELECT * FROM app_users").first();
   assert.notEqual(row.password_hash, password);
@@ -106,7 +106,7 @@ test("two users connect and sync their own Duolingo, encrypted at rest, no legac
   // Even an in-flight write using a captured old connection stays invisible.
   await oldRepo.save(old, { id: "de", words: [{ text: "late-write" }] });
   const catalog = await (await call(env, "/api/catalog", undefined, alice)).json();
-  assert.deepEqual(catalog.courses[0].words, []);
+  assert.deepEqual(catalog.courses, []);
   assert.equal((await call(env, "/api/sync/start?language=de", {}, alice)).status, 409);
   assert.equal((await call(env, "/api/account/connect", { token }, alice)).status, 200);
   assert.deepEqual((await (await call(env, "/api/catalog", undefined, alice)).json()).courses[0].words, []);

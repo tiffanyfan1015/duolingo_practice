@@ -11,7 +11,7 @@ export function mountAccount(element, client = createAccountClient()) {
     render();
     try {
       state.user = await client.action(action, values);
-      state.message = ({ login: "登入成功。", register: "帳號已建立，請連接 Duolingo。", connect: "已連接，可前往練習室同步字庫。", disconnect: "已解除連接。", logout: "已登出。" })[action];
+      state.message = ({ login: "登入成功。", register: "帳號已建立，請連接 Duolingo。", connect: "已連接，可前往練習室同步字庫。", disconnect: "已解除連接。", logout: "已登出。", "refresh-courses": "課程清單已更新。", "save-courses": "啟用課程已儲存。" })[action];
     } catch (error) { state.message = error.message; }
     finally { state.busy = false; render(); }
   });

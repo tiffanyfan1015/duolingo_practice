@@ -13,6 +13,12 @@ export function bindEvents(actions) {
   });
   document.addEventListener("click", (event) => {
     const target = event.target;
+    const courseButton = target.closest("[data-lang]");
+    if (courseButton) {
+      $("#search").value = "";
+      actions.changeLanguage(courseButton.dataset.lang);
+      return;
+    }
     const review = target.closest("[data-review-action]");
     if (review) {
       actions.reviewAction(review.dataset.reviewAction, review.dataset.value);
@@ -72,12 +78,6 @@ export function bindEvents(actions) {
       event.target.classList.remove("concealed");
     }
   });
-  $$("[data-lang]").forEach((button) => {
-    button.onclick = () => {
-      $("#search").value = "";
-      actions.changeLanguage(button.dataset.lang);
-    };
-  });
   $$("[data-mode]").forEach((button) => {
     button.onclick = () => actions.changeMode(button.dataset.mode);
   });
@@ -102,4 +102,9 @@ export function bindEvents(actions) {
       event.target.value = "";
     }
   };
+}
+export function bindEmptyEvents(actions) {
+  $("#backup").onclick = actions.backup;
+  $("#about").onclick = actions.about;
+  $(".close").onclick = () => $("#detail").close();
 }

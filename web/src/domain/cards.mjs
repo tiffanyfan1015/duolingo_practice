@@ -1,10 +1,10 @@
 export const CARD_TYPES = {
   recognition: {
     name: "辨識卡",
-    prompt: "看單字，想中文",
-    short: "單字 → 中文",
+    prompt: "看單字，想釋義",
+    short: "單字 → 釋義",
   },
-  recall: { name: "回想卡", prompt: "看中文，想單字", short: "中文 → 單字" },
+  recall: { name: "回想卡", prompt: "看釋義，想單字", short: "釋義 → 單字" },
   listening: {
     name: "聽力卡",
     prompt: "聽發音，想單字與意思",
@@ -20,6 +20,7 @@ export function cardsForCourse(course) {
       id: `${word.id}::${type}`,
       noteId: word.id,
       language: course.id,
+      learningLanguage: course.language || course.id,
       type,
       word,
       units: word.units,

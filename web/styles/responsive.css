@@ -62,7 +62,7 @@
   .storage-note {
     display: none;
   }
-  .side-note + .side-action {
+  #backup {
     margin-top: 0;
   }
   .side-action {

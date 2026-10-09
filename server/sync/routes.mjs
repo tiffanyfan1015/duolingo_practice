@@ -3,6 +3,7 @@ import { createDuolingoClient, SyncError } from "./duolingo.mjs";
 import { syncService, publicJob } from "./service.mjs";
 import { userRepository } from "./user-repository.mjs";
 import { accountCredential, publicAccount } from "../accounts/service.mjs";
+import { courseSettings } from "../courses/service.mjs";
 export const json = (data, status = 200) =>
   Response.json(data, {
     status,
@@ -45,18 +46,21 @@ export async function api(request, env, user = null) {
       return json(await baseCatalog(request, env));
     const repo = user ? userRepository(env.DB, user) : repository(env.DB);
     await repo.init();
+    const selected = user ? (await courseSettings(env, user)).courses.filter((c) => c.active && c.available) : null;
     if (url.pathname === "/api/catalog" && request.method === "GET") {
-      const base = user ? emptyUserCatalog() : await baseCatalog(request, env),
+      const base = user ? { courses: selected.map((c) => ({ ...c, words: [], units: [] })) } : await baseCatalog(request, env),
         saved = await repo.courses();
       return json({
         ...(user ? { user: publicAccount(user) } : {}),
         courses: base.courses.map(
-          (course) => saved.find((item) => item.id === course.id) || course,
+          (course) => ({ ...course, ...(saved.find((item) => item.id === course.id) || {}) }),
         ),
       });
     }
     const language = url.searchParams.get("language");
-    if (!["de", "ja"].includes(language))
+    const target = selected?.find((c) => c.id === language);
+    if (user && !target) throw new SyncError("請先在帳號頁啟用這個課程。", 409);
+    if (!user && !["de", "ja"].includes(language))
       throw new SyncError("請選擇德文或日文。");
     if (url.pathname === "/api/sync/status" && request.method === "GET")
       return json({
@@ -93,6 +97,7 @@ export async function api(request, env, user = null) {
       url.pathname.endsWith("/step")
         ? (user ? { courses: await repo.courses() } : await baseCatalog(request, env))
         : { courses: [] },
+      target,
     );
     if (url.pathname === "/api/sync/start")
       return json({

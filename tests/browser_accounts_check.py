@@ -68,6 +68,37 @@ try:
         assert 'cijian-user:' in alice_records
         assert 'jwt_token' not in alice_records and '.synthetic' not in alice_records
         page.locator('#account-link').click()
+        def save_courses(selected):
+            form = page.locator('form[data-account="save-courses"]')
+            form.wait_for()
+            for checkbox in form.locator('[name="courses"]').all():
+                checkbox.set_checked(checkbox.input_value() in selected)
+            form.locator('button').click()
+            page.get_by_text('啟用課程已儲存。', exact=True).wait_for()
+
+        page.wait_for_selector('.course-option')
+        assert page.locator('.course-option').count() == 5
+        assert page.locator('.course-option').all_text_contents() == ['德文', '日文', '法文', '西班牙文', '英文']
+        save_courses({'de', 'course:french'})
+        page.locator('form[data-account="refresh-courses"] button').click()
+        page.get_by_text('課程清單已更新。', exact=True).wait_for()
+        page.locator('.primary-link').click()
+        page.locator('[data-lang="course:french"]').click()
+        assert '法文' in page.locator('#sync-area').inner_text()
+        page.locator('[data-sync="continue"]').click()
+        page.locator('#sync-area').filter(has_text='請先在 Duolingo 切換').wait_for()
+        page.locator('#account-link').click()
+        save_courses(set())
+        assert page.locator('[name="courses"]:checked').count() == 0
+        page.locator('.primary-link').click()
+        page.get_by_text('尚未啟用課程', exact=True).wait_for()
+        page.get_by_text('設定啟用課程', exact=True).click()
+        save_courses({'de'})
+        page.locator('.primary-link').click()
+        page.wait_for_selector('[data-star]')
+        assert 'Haus-101' in page.locator('#content').inner_text()
+        assert page.evaluate('() => JSON.stringify({...localStorage})') == alice_records
+        page.locator('#account-link').click()
         page.locator('form[data-account="logout"] button').click()
         page.wait_for_selector('form[data-account="register"]')
         register('bob')

@@ -7,12 +7,14 @@ import {
 } from "./domain/session.mjs";
 import { filterWords } from "./domain/vocabulary.mjs";
 import { downloadBackup, readBackup } from "./services/browser-files.mjs";
-import { bindEvents } from "./ui/events.mjs";
+import { bindEvents, bindEmptyEvents } from "./ui/events.mjs";
 import {
   readControls,
   renderCourse,
   renderWorkspace,
   showDialog,
+  renderCourseSwitch,
+  showNoCourses,
 } from "./ui/shell.mjs";
 import { detailView } from "./ui/views/word-detail.mjs";
 import { aboutView } from "./ui/views/about.mjs";
@@ -25,8 +27,14 @@ import {
 export function mountApplication({ catalog, progress, review, audio, notify }) {
   const accountLink = document.querySelector("#account-link");
   if (accountLink) accountLink.hidden = !catalog.user;
+  renderCourseSwitch(catalog.courses);
+  if (!catalog.courses.length) {
+    showNoCourses();
+    bindEmptyEvents({ backup: () => downloadBackup(exportCollection(progress, review)), about: () => showDialog(aboutView()) });
+    return;
+  }
   const state = {
-    language: "de",
+    language: catalog.courses[0].id,
     mode: "list",
     page: 0,
     session: null,
@@ -50,10 +58,16 @@ export function mountApplication({ catalog, progress, review, audio, notify }) {
   const sync = mountSync({
     element: document.querySelector("#sync-area"),
     language: () => state.language,
+    courseName: () => course().name,
     userId: catalog.user?.id,
     onComplete: async () => {
       const updated = await loadCatalog(fetch, catalog.user?.id);
       catalog.courses = updated.courses;
+      if (!catalog.courses.some((c) => c.id === state.language)) {
+        location.reload();
+        return;
+      }
+      renderCourseSwitch(catalog.courses);
       daily.invalidate();
       renderCourse(course(), progress.romaji);
       reset();
@@ -70,6 +84,7 @@ export function mountApplication({ catalog, progress, review, audio, notify }) {
     );
     renderWorkspace(words, {
       ...state,
+      language: course().language || course().id,
       course: course(),
       records: progress.records,
       showRomaji: progress.romaji,
@@ -142,7 +157,7 @@ export function mountApplication({ catalog, progress, review, audio, notify }) {
     },
     reveal(answer = "") {
       if (!state.session || state.session.revealed) return;
-      state.session = revealAnswer(state.session, answer, state.language);
+      state.session = revealAnswer(state.session, answer, course().language || state.language);
       render();
     },
     grade(good) {
@@ -155,7 +170,7 @@ export function mountApplication({ catalog, progress, review, audio, notify }) {
     },
     play(id) {
       const selected = word(id);
-      if (selected) audio.play(selected, state.language);
+      if (selected) audio.play(selected, course().language || state.language);
     },
     toggleStar(id) {
       progress.toggleStar(id);
@@ -170,7 +185,7 @@ export function mountApplication({ catalog, progress, review, audio, notify }) {
       showDialog(
         detailView(word(id), {
           record: progress.get(id),
-          language: state.language,
+          language: course().language || state.language,
           showRomaji: progress.romaji,
           course: course(),
         }),

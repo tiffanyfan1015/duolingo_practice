@@ -1,3 +1,4 @@
+import { speechLanguage } from "../domain/languages.mjs";
 export function createAudioPlayer(notify) {
   let current = null;
   let generation = 0;
@@ -26,7 +27,7 @@ export function createAudioPlayer(notify) {
       if (request !== generation) return;
       if ("speechSynthesis" in window) {
         const utterance = new SpeechSynthesisUtterance(word.text);
-        utterance.lang = language === "de" ? "de-DE" : "ja-JP";
+        utterance.lang = speechLanguage(language);
         speechSynthesis.speak(utterance);
         notify("原始音訊無法播放，改用裝置語音。");
       } else {

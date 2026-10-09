@@ -20,7 +20,7 @@ export function publicJob(job) {
     completedAt: job.completedAt || null,
   };
 }
-export function syncService(repo, client, baseCatalog = { courses: [] }) {
+export function syncService(repo, client, baseCatalog = { courses: [] }, target = null) {
   return {
     async start(language, restart = false) {
       const previous = await repo.get(language);
@@ -33,10 +33,11 @@ export function syncService(repo, client, baseCatalog = { courses: [] }) {
         return publicJob(previous);
       if (previous && Date.now() - previous.startedAt < 15000)
         throw new SyncError("請稍候 15 秒再重新開始同步。", 429);
-      const snapshot = courseState(await client.profile(), language);
+      const snapshot = courseState(await client.profile(), target?.language || language, target);
       const job = {
         id: crypto.randomUUID(),
         language,
+        learningLanguage: target?.language || language,
         ...snapshot,
         signature: fingerprint(snapshot),
         phase: "words",
@@ -76,7 +77,7 @@ export function syncService(repo, client, baseCatalog = { courses: [] }) {
           if (job.probes.length === job.skills.length) job.phase = "verify";
         }
       } else if (job.phase === "verify") {
-        const snapshot = courseState(await client.profile(), language);
+        const snapshot = courseState(await client.profile(), target?.language || language, target);
         if (fingerprint(snapshot) !== job.signature)
           throw new SyncError(
             "同步期間 Duolingo 進度或課程改變，請重新開始；舊字庫已保留。",

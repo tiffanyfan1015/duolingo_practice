@@ -9,7 +9,7 @@ export async function loadCatalog(fetcher = fetch, expectedUserId = null) {
   if (!response.ok) throw new Error("Unable to load catalog");
   const data = await response.json();
   if (expectedUserId && data.user?.id !== expectedUserId) throw new Error("登入帳號已變更，請重新整理頁面。");
-  if (!Array.isArray(data.courses) || !data.courses.length)
+  if (!Array.isArray(data.courses) || (!data.courses.length && !data.user))
     throw new Error("Invalid catalog");
   return data;
 }

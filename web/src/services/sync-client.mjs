@@ -3,7 +3,7 @@ export function createSyncClient(fetcher = fetch, userId = null) {
     let response;
     try {
       response = await fetcher(
-        `./api/sync/${path}?language=${language}`,
+        `./api/sync/${path}?language=${encodeURIComponent(language)}`,
         body === undefined
           ? { cache: "no-store", ...(userId ? { headers: { "X-Cijian-User": userId } } : {}) }
           : {

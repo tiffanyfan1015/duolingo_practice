@@ -4,7 +4,7 @@ import re
 import shutil
 
 ROOT = Path(__file__).resolve().parents[1]
-MODULES = ['basic-auth.mjs', 'sync/duolingo.mjs', 'sync/domain.mjs', 'sync/repository.mjs', 'sync/user-repository.mjs', 'sync/service.mjs', 'accounts/crypto.mjs', 'accounts/repository.mjs', 'accounts/service.mjs', 'accounts/routes.mjs', 'sync/routes.mjs', 'multi-user.mjs', 'worker.mjs']
+MODULES = ['../web/src/domain/languages.mjs', 'basic-auth.mjs', 'sync/duolingo.mjs', 'sync/domain.mjs', 'sync/repository.mjs', 'sync/user-repository.mjs', 'sync/service.mjs', 'accounts/crypto.mjs', 'courses/domain.mjs', 'courses/repository.mjs', 'courses/service.mjs', 'accounts/repository.mjs', 'accounts/service.mjs', 'accounts/routes.mjs', 'sync/routes.mjs', 'multi-user.mjs', 'worker.mjs']
 
 
 def build(output=None, include_personal=False):

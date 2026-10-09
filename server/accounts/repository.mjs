@@ -1,4 +1,6 @@
+import { COURSE_SCHEMA } from "../courses/repository.mjs";
 export const ACCOUNT_SCHEMA = [
+  COURSE_SCHEMA,
   "CREATE TABLE IF NOT EXISTS app_users (id TEXT PRIMARY KEY, username TEXT NOT NULL UNIQUE, salt TEXT NOT NULL, password_hash TEXT NOT NULL, duolingo_id TEXT, credential TEXT, connection_id TEXT NOT NULL)",
   "CREATE TABLE IF NOT EXISTS app_sessions (token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL, expires INTEGER NOT NULL)",
   "CREATE INDEX IF NOT EXISTS app_sessions_expiry ON app_sessions(expires)",

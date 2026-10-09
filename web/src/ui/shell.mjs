@@ -3,6 +3,19 @@ import { $, $$ } from "./dom.mjs";
 import { esc, unitLabel } from "./views/shared.mjs";
 import { listView } from "./views/word-list.mjs";
 import { practiceView } from "./views/practice.mjs";
+import { courseSwitchView, noCoursesView } from "./views/courses.mjs";
+
+export function renderCourseSwitch(courses) {
+  $(".language-switch").innerHTML = courseSwitchView(courses);
+}
+export function showNoCourses() {
+  renderCourseSwitch([]);
+  $(".language-switch").hidden = true;
+  $(".stats").hidden = true;
+  $(".workspace").hidden = true;
+  $("#restore").disabled = true;
+  $("#sync-area").innerHTML = noCoursesView();
+}
 
 export function readControls() {
   return {
@@ -29,7 +42,7 @@ export function renderCourse(course, showRomaji) {
     button.classList.toggle("selected", selected);
     button.setAttribute("aria-pressed", selected);
   });
-  $(".toggle").style.visibility = course.id === "ja" ? "visible" : "hidden";
+  $(".toggle").style.visibility = (course.language || course.id) === "ja" ? "visible" : "hidden";
   $("#romaji").checked = showRomaji;
 }
 

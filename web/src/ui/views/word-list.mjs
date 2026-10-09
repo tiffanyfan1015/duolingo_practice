@@ -23,7 +23,7 @@ export function listView(
       <thead>
         <tr>
           <th>單字 / WORD</th>
-          <th>中文意思</th>
+          <th>釋義</th>
           <th>學習狀態</th>
           <th>操作</th>
         </tr>
@@ -42,7 +42,7 @@ export function listView(
                 <div
                   class="meaning ${hideMeaning ? "concealed" : ""}"
                   tabindex="${hideMeaning ? "0" : "-1"}"
-                  aria-label="${hideMeaning ? "點擊顯示中文意思" : "中文意思"}"
+                  aria-label="${hideMeaning ? "點擊顯示釋義" : "釋義"}"
                 >
                   ${esc(w.meanings.slice(0, 3).join("、"))}
                 </div>

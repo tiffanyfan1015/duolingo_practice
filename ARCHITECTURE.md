@@ -80,6 +80,8 @@ python tests/browser_check.py
 
 ## 雲端同步與部署
 
+`server/courses/` 分離課程探索與啟用規則、版本化設定儲存、API 流程。`user_course_settings` 按使用者及連線隔離；同步資料表的 language 欄位保存穩定課程 key，實際目標語言另存 language／learningLanguage。既有中文教學德文、日文保留 de／ja key，新課程使用上游課程 ID 形成獨立 key。前端 `domain/languages.mjs` 統一語言名稱及語音代碼，`ui/views/courses.mjs` 純呈現動態課程切換。停用課程不刪除資料，所有課程停用時顯示設定入口；備份 schema 保持相容。
+
 多人版本見 [MULTI_USER.md](MULTI_USER.md)。`server/accounts/` 分開加密、資料庫、帳號流程與 HTTP 路由；`server/multi-user.mjs` 組裝登入與資源保護。`sync/user-repository.mjs` 提供以用戶及連線分區的同步儲存，沿用原同步 service／domain。`account-controller`、`account-client`、`ui/account-events`、`ui/views/account` 分別處理前端流程、HTTP、事件與純呈現。雲端多人版允許在專用帳號表單提交 Duolingo 憑證，後端驗證並加密保存，取代早期單人網站不接收憑證的限制。原 Python CLI 仍不保存憑證。
 
 新增 server/ 分層，詳見 [CLOUD_SYNC.md](CLOUD_SYNC.md)。Duolingo API transport、同步領域規則、D1 repository、流程 service、HTTP routes 各自分開；worker 是登入與路由薄入口。前端同步亦拆成 controller／service／view。`scripts/cloud_build.py` 生成單一部署 Worker，不能將生成檔當作原始碼維護。私人字庫與憑證不進 GitHub。

@@ -2,17 +2,17 @@
 
 const MODE_COPY = {
   flash: {
-    title: "想一想，再翻開答案。",
+    title: "翻卡練習",
     label: "翻卡練習",
-    prompt: "試著回想中文意思",
+    prompt: "回想單字意思",
   },
   spell: {
-    title: "把記得的字，親手寫下來。",
-    label: "中文 → 單字",
+    title: "拼字練習",
+    label: "釋義 → 單字",
     prompt: "這個意思，怎麼寫？",
   },
   listen: {
-    title: "先聽見，再想起來。",
+    title: "聽力練習",
     label: "聽音 → 單字",
     prompt: "點擊播放，寫下你聽到的字",
   },
@@ -20,10 +20,9 @@ const MODE_COPY = {
 
 function startView(count, mode) {
   return /* HTML */ ` <div class="practice-start">
-    <div class="eyebrow">A MOMENT FOR YOUR WORDS</div>
     <h3>${MODE_COPY[mode].title}</h3>
     <p>
-      從目前篩選的 ${count} 個字中，隨機選取練習。<br />每個字的紀錄，在所有單元與練習方式共用。
+      從目前篩選的 ${count} 個字中隨機出題。
     </p>
     <button id="start" class="primary" ${count ? "" : "disabled"}>
       開始練習 →
@@ -33,10 +32,9 @@ function startView(count, mode) {
 
 function completedView(session) {
   return /* HTML */ ` <div class="practice-start">
-    <div class="eyebrow">A LITTLE MORE FAMILIAR</div>
-    <h3>今天，又熟悉了一點。</h3>
+    <h3>練習完成</h3>
     <p>
-      完成 ${session.words.length} 個字 · ${session.good} 個記得或答對<br />下次複習時間已更新，可以安心休息。
+      完成 ${session.words.length} 個字 · ${session.good} 個記得或答對
     </p>
     <button id="restart" class="primary">再練一組</button>
   </div>`;
@@ -100,7 +98,7 @@ function controlsView({ session, mode, language }) {
   }
   if (!session.revealed) {
     const placeholder =
-      language === "ja" ? "輸入日文（可用假名）" : "輸入德文，保留 ä、ö、ü、ß";
+      language === "ja" ? "輸入日文（可用假名）" : language === "de" ? "輸入德文，保留 ä、ö、ü、ß" : "輸入單字，保留重音符號";
     return /* HTML */ ` <form class="answer-form">
         <input
           id="answer"

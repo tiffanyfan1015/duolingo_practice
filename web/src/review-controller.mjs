@@ -65,7 +65,7 @@ export function createReviewController({
         settings: store.settings(course().id),
         canUndo:
           store.canUndo && cards().some((card) => card.id === store.undoCardId),
-        language: course().id,
+        language: course().language || course().id,
         showRomaji: romaji(),
         now: Date.now(),
       });
@@ -89,7 +89,7 @@ export function createReviewController({
       } else if (name === "overview" || name === "manage") {
         screen = name;
         audio.stop();
-      } else if (name === "audio" && card) audio.play(card.word, card.language);
+      } else if (name === "audio" && card) audio.play(card.word, card.learningLanguage || card.language);
       else if (name === "reveal" && card && !revealed) {
         answeredAt = Date.now();
         previews = previewRatings(
@@ -162,7 +162,7 @@ export function createReviewController({
       notify("每日複習設定已儲存。");
     },
     importModel(text) {
-      const model = parseModel(text, course().id);
+      const model = parseModel(text, course().language || course().id);
       store.setSettings(course().id, {
         ...store.settings(course().id),
         weights: model.weights,

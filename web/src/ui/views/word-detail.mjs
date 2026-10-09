@@ -5,7 +5,7 @@ export function detailView(
   { record: r, language: lang, showRomaji, course: catalog },
 ) {
   return /* HTML */ `<div class="eyebrow">
-      ${lang === "de" ? "DEUTSCH" : "日本語"}
+      ${esc(catalog.name)}
     </div>
     <h3 class="detail-title">${esc(w.text)}</h3>
     ${reading(w, lang, showRomaji)}<button
@@ -16,7 +16,7 @@ export function detailView(
     </button>
     <div class="detail-block">
       <h4>
-        中文意思 ·
+        釋義 ·
         ${catalog.sync?.rawMeanings ? "Duolingo 原始釋義" : "原始釋義轉繁體"}
       </h4>
       <p>${esc(w.meanings.join("、"))}</p>

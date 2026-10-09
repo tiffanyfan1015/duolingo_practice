@@ -1,6 +1,8 @@
 import { randomSecret, digestSecret, sameSecret, passwordHash, credentialKey, sealCredential, openCredential } from "./crypto.mjs";
 import { accountRepository } from "./repository.mjs";
 import { createDuolingoClient, userId, SyncError } from "../sync/duolingo.mjs";
+import { refreshCourseList, saveCourseSelection } from "../courses/service.mjs";
+import { discoverCourses } from "../courses/domain.mjs";
 
 export const publicAccount = (user) => user ? ({ id: user.id, username: user.username, connected: !!user.credential, duolingoId: user.duolingo_id || null }) : null;
 export function accountCookie(token, maxAge = 604800) {
@@ -64,12 +66,21 @@ export async function accountAction(action, body, request, env, context) {
     if (!credential || credential.length > 12000) throw new SyncError("請輸入有效的 Duolingo jwt_token。");
     const duoId = userId(credential);
     if (user.duolingo_id && user.duolingo_id !== duoId) throw new SyncError("此詞間帳號已綁定另一個 Duolingo 帳號；請為另一帳號建立新的詞間帳號。", 409);
-    const profile = await createDuolingoClient(credential).profile();
+    const client = createDuolingoClient(credential);
+    const [profile, listing] = await Promise.all([client.profile(), client.courses()]);
     if (!profile?.currentCourse) throw new SyncError("無法確認 Duolingo 的目前課程，請先在 Duolingo 選擇課程。");
+    discoverCourses(listing, profile);
     const encrypted = await sealCredential(credential, env.CREDENTIAL_KEY, user.id);
     const result = await repo.connect(user, duoId, encrypted);
     if (!result.meta.changes) throw new SyncError("連線狀態已變更，請重新整理。", 409);
+    await refreshCourseList(env, { ...user, credential: encrypted }, { listing, profile });
     return { user: publicAccount({ ...user, duolingo_id: duoId, credential: encrypted }) };
+  }
+  if (action === "refresh-courses" || action === "save-courses") {
+    if (!user.credential) throw new SyncError("請先連接 Duolingo。", 409);
+    if (action === "refresh-courses") await refreshCourseList(env, user);
+    else await saveCourseSelection(env, user, body);
+    return { user: publicAccount(user) };
   }
   if (action === "disconnect") {
     const result = await repo.disconnect(user, crypto.randomUUID());

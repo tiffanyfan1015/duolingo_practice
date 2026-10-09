@@ -41,8 +41,7 @@ function settingsView(settings) {
 
 function overview(context) {
   const { queue: q, settings } = context;
-  return `<div class="review-intro"><div class="eyebrow">A DAILY RHYTHM</div><h3>今天，讓記憶再深一點。</h3><p>先回想，再翻面。每張卡片都有自己的複習時間。</p></div>
-  <div class="review-counts"><div><strong>${q.newCount}</strong><span>新卡</span></div><div><strong>${q.learningCount}</strong><span>學習中到期</span></div><div><strong>${q.reviewCount}</strong><span>待複習</span></div></div>
+  return `<div class="review-counts"><div><strong>${q.newCount}</strong><span>新卡</span></div><div><strong>${q.learningCount}</strong><span>學習中到期</span></div><div><strong>${q.reviewCount}</strong><span>待複習</span></div></div>
   <div class="review-start">${button("start", q.queue.length ? "開始今日複習 →" : "檢查待複習卡片", 'class="primary"')}
   <p class="hint">今天已回答 ${q.todayCount} 次 · 新學 ${q.introducedCount} 張 · 按過「重來」${q.againCount} 次</p>
   ${waiting(q)}</div>${settingsView(settings)}
@@ -66,12 +65,12 @@ function study(context) {
     legacyWords,
   } = context;
   if (!card)
-    return `<div class="review-empty"><h3>目前沒有可複習的卡片。</h3><p>這個單元現在的份量完成了，可以休息一下。</p>${waiting(q)}${button("refresh", "重新檢查", 'class="primary"')}</div>`;
+    return `<div class="review-empty"><h3>目前沒有可複習的卡片。</h3>${waiting(q)}${button("refresh", "重新檢查", 'class="primary"')}</div>`;
   const word = card.word;
   const meanings = esc(word.meanings.join("、"));
   let front =
     card.type === "recognition"
-      ? `<h3>${esc(word.text)}</h3>${reading(word, card.language, showRomaji)}`
+      ? `<h3>${esc(word.text)}</h3>${reading(word, card.learningLanguage || card.language, showRomaji)}`
       : card.type === "recall"
         ? `<h3 class="translation">${meanings}</h3><p class="hint">在心裡說出單字，或寫在紙上。</p>`
         : `${button("audio", "♫", 'class="listen-button" aria-label="播放聽力題目"')}<p class="hint">聽音，回想單字與意思。</p>`;
@@ -85,7 +84,7 @@ function study(context) {
   <article class="review-card">${front}
   ${
     revealed
-      ? `<div class="review-answer"><h4>${esc(word.text)}</h4>${reading(word, card.language, showRomaji)}<p>${meanings}</p>${button("audio", "♫ 播放發音")}${legacyWords[word.id]?.note ? `<p class="review-note">${esc(legacyWords[word.id].note)}</p>` : ""}</div>
+      ? `<div class="review-answer"><h4>${esc(word.text)}</h4>${reading(word, card.learningLanguage || card.language, showRomaji)}<p>${meanings}</p>${button("audio", "♫ 播放發音")}${legacyWords[word.id]?.note ? `<p class="review-note">${esc(legacyWords[word.id].note)}</p>` : ""}</div>
     <div class="review-ratings">${labels.map(([title, hint], index) => `<button data-review-action="rate" data-value="${index + 1}" class="rating-${index + 1}" title="${esc(dateLabel(previews[index + 1].memory.due))}"><span>${index + 1} · ${title}</span><strong>${interval(previews[index + 1].memory.due, answeredAt)}</strong><small>${hint}</small></button>`).join("")}</div>
     <p class="hint">忘記答案請選「重來」；「困難」表示仍然答對。依實際回想感受評分。</p>`
       : `${button("reveal", "顯示答案", 'class="primary"')}<p class="hint">空白鍵翻面 · 翻面後用 1–4 評分，空白鍵選「良好」</p>`

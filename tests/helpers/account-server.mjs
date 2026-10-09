@@ -17,7 +17,7 @@ const env = {
     if (!file.startsWith(resolve(root) + sep)) return new Response("", { status: 404 });
     try {
       let content = await readFile(file);
-      if (preview && extname(file) === ".html") content = content.toString("utf8").replace("<body>", '<body><div style="position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#fff2cc;color:#493711;padding:8px 16px;text-align:center;font:14px system-ui">本機示範 · 使用模擬 Duolingo 資料 · 帳號 demo / 密碼 demo-study-12345 · 重啟後帳號重設</div>');
+      if (preview && extname(file) === ".html") content = content.toString("utf8").replace("<main>", '<main><p style="color:#8a7440;font:12px system-ui;margin:12px 0">本機預覽 · 模擬資料</p>');
       return new Response(content, { headers: { "Content-Type": ({ ".html": "text/html; charset=utf-8", ".mjs": "text/javascript", ".js": "text/javascript", ".css": "text/css" })[extname(file)] || "application/octet-stream" } });
     } catch { return new Response("", { status: 404 }); }
   } },
@@ -29,7 +29,7 @@ globalThis.fetch = async (url, options) => {
   if (sub === "999") return new Response("", { status: 403 });
   return Response.json(url.includes("learned-lexemes")
     ? { learnedLexemes: [{ text: "Haus-" + sub, translations: ["房子"] }], pagination: { nextStartIndex: null, totalLexemes: 1 } }
-    : { currentCourse: { id: "course", learningLanguage: "de", fromLanguage: "zh", skills: [{ id: "skill", finishedLevels: 1 }], pathSectioned: [] } });
+    : { courses: [{ id: "course", learningLanguage: "de", fromLanguage: "zh" }, { id: "japanese", learningLanguage: "ja", fromLanguage: "zh" }, { id: "french", learningLanguage: "fr", fromLanguage: "en" }, { id: "spanish", learningLanguage: "es", fromLanguage: "en" }, { id: "english", learningLanguage: "en", fromLanguage: "zh" }], currentCourse: { id: "course", learningLanguage: "de", fromLanguage: "zh", skills: [{ id: "skill", finishedLevels: 1 }], pathSectioned: [] } });
 };
 const server = createServer(async (req, res) => {
   try {

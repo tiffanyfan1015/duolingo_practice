@@ -3,6 +3,7 @@ import { syncView } from "./ui/views/sync.mjs";
 export function mountSync({
   element,
   language,
+  courseName = language,
   onComplete,
   userId = null,
   client = createSyncClient(fetch, userId),
@@ -12,7 +13,7 @@ export function mountSync({
     message = "",
     generation = 0;
   const render = () => {
-    element.innerHTML = syncView({ language: language(), busy, job, message });
+    element.innerHTML = syncView({ courseName: courseName(), busy, job, message });
   };
   async function refresh() {
     if (busy) return;

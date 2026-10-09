@@ -1,5 +1,5 @@
 ﻿export function aboutView() {
-  return `<div class="eyebrow">ABOUT YOUR WORDS</div><h3 class="detail-title">資料與學習提示</h3>
+  return `<h3 class="detail-title">資料與學習說明</h3>
   <p>單字、翻譯與音訊來自你的 Duolingo 匯出。單元由技能篩選結果推定，並非官方標記的首次教學單元。</p>
   <p>中文由 OpenCC 轉為臺灣繁體，尚未逐條校訂原始譯法。日文假名與羅馬拼音由 pykakasi 自動轉換，多音字請搭配音訊確認。</p>
   <p>「每日複習」依照每張卡片的記憶狀況安排下次出現。先回想再翻面；忘記選「重來」，答對但費力選「困難」，正常想起選「良好」，立即想起選「簡單」。辨識、回想、聽力各自記錄。</p>

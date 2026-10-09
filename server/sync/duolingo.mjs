@@ -70,6 +70,7 @@ export function createDuolingoClient(token, fetcher = fetch) {
   }
   return {
     profile: () => request(`/2023-05-23/users/${id}?fields=currentCourse`),
+    courses: () => request(`/2017-06-30/users/${id}?fields=courses,currentCourseId`),
     page: (course, skills, start) =>
       request(
         `/2017-06-30/users/${id}/courses/${course.learningLanguage}/${course.fromLanguage}/learned-lexemes?limit=50&sortBy=LEARNED_DATE&startIndex=${start}`,

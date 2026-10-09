@@ -1,6 +1,7 @@
 import { CARD_TYPES } from "./cards.mjs";
 import { DEFAULT_REVIEW_SETTINGS } from "./review-queue.mjs";
 import { validWeights } from "./fsrs-model.mjs";
+import { validCourseKey } from "./languages.mjs";
 
 const object = (value) =>
   value && typeof value === "object" && !Array.isArray(value);
@@ -93,7 +94,7 @@ export function cleanReviewData(value, allowedIds = null) {
         (!allowedIds || allowedIds.has(log.cardId)) &&
         typeof log.id === "string" &&
         typeof log.cardId === "string" &&
-        ["de", "ja"].includes(log.language) &&
+        validCourseKey(log.language) &&
         typeof log.day === "string" &&
         finite(log.at) &&
         [1, 2, 3, 4].includes(log.rating),
@@ -109,7 +110,7 @@ export function cleanReviewData(value, allowedIds = null) {
       wasReview: log.wasReview === true,
     }));
   const settings = Object.fromEntries(
-    ["de", "ja"].map((lang) => [lang, cleanSettings(value.settings?.[lang])]),
+    [...new Set(["de", "ja", ...Object.keys(object(value.settings) ? value.settings : {})])].filter(validCourseKey).map((lang) => [lang, cleanSettings(value.settings?.[lang])]),
   );
   return { version: 1, cards, logs, settings };
 }

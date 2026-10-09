@@ -217,7 +217,7 @@ select {
 }
 footer {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   color: #91998d;
   font-size: 10px;
   padding: 25px 0 35px;
