@@ -23,7 +23,7 @@ export async function accountContext(request, env) {
   return { repo, user, token };
 }
 export function requireAccount(request, context) {
-  if (!context.user) throw new SyncError("請先登入詞間。", 401);
+  if (!context.user) throw new SyncError("請先登入 Duolingo 單字庫。", 401);
   const expected = request.headers.get("X-Cijian-User");
   if (expected && expected !== context.user.id) throw new SyncError("登入帳號已變更，請重新整理頁面。", 409);
 }
@@ -65,7 +65,7 @@ export async function accountAction(action, body, request, env, context) {
     const credential = typeof body.token === "string" ? body.token.trim() : "";
     if (!credential || credential.length > 12000) throw new SyncError("請輸入有效的 Duolingo jwt_token。");
     const duoId = userId(credential);
-    if (user.duolingo_id && user.duolingo_id !== duoId) throw new SyncError("此詞間帳號已綁定另一個 Duolingo 帳號；請為另一帳號建立新的詞間帳號。", 409);
+    if (user.duolingo_id && user.duolingo_id !== duoId) throw new SyncError("此本站帳號已綁定另一個 Duolingo 帳號；請為另一帳號建立新的本站帳號。", 409);
     const client = createDuolingoClient(credential);
     const [profile, listing] = await Promise.all([client.profile(), client.courses()]);
     if (!profile?.currentCourse) throw new SyncError("無法確認 Duolingo 的目前課程，請先在 Duolingo 選擇課程。");

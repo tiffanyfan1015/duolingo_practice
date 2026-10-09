@@ -1,0 +1,120 @@
+/* Shared visual theme for the vocabulary workspace and account settings. */
+:root {
+  --green: #58a700;
+  --mint: #efffdc;
+  --ink: #3c3c3c;
+  --muted: #777;
+  --line: #e5e5e5;
+  --paper: #fff;
+  --orange: #d77b00;
+  --action: #58cc02;
+  --action-edge: #46a302;
+  font-family: "Arial Rounded MT Bold", "Segoe UI", "Microsoft JhengHei", sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+}
+body { font-family: inherit; background: var(--paper); color: var(--ink); }
+h1, h2, h3, strong, button, .primary-link { font-weight: 800; }
+h1 { letter-spacing: 0; }
+button, a, input, select, textarea { touch-action: manipulation; }
+button { transition: background .15s, transform .1s, box-shadow .1s; }
+button:hover { filter: none; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible,
+textarea:focus-visible, summary:focus-visible { outline: 3px solid #1cb0f6; outline-offset: 3px; }
+input[type="checkbox"] { accent-color: var(--action-edge); }
+.sidebar { background: #fff; border-right: 2px solid var(--line); }
+.brand { color: var(--green); letter-spacing: -.5px; }
+.brand-icon { background: var(--action); color: #fff; border-radius: 15px; box-shadow: 0 4px 0 var(--action-edge); transform: rotate(-6deg); }
+.brand-name { font-weight: 900; }
+.side-label { color: #999; font-weight: 800; }
+.side-active { background: #ddf4ff; color: #087caf; border: 2px solid #84d8ff; border-radius: 14px; }
+.side-action { font-weight: 700; color: #777; border-radius: 12px; }
+.side-action:hover { background: #f7f7f7; }
+header { border-bottom: 2px solid var(--line); }
+.breadcrumb { font-size: 13px; font-weight: 800; }
+.account-link { border: 2px solid var(--line); border-radius: 14px; background: #fff; color: #087caf; box-shadow: 0 2px 0 var(--line); }
+.account-link:hover { border-color: #84d8ff; background: #ddf4ff; }
+.language-switch { border: 0; padding: 0 0 4px; gap: 10px; background: transparent; }
+.language-switch button { border: 2px solid var(--line); border-radius: 14px; font-size: 13px; color: #777; box-shadow: 0 3px 0 var(--line); }
+.language-switch .selected { background: #efffdc; color: #4b8700; border-color: #a5ed6e; box-shadow: 0 3px 0 #a5ed6e; }
+.stats { border: 0; gap: 16px; background: transparent; overflow: visible; margin-bottom: 26px; }
+.stats > div, .stats > div:last-child { border: 2px solid var(--line); border-bottom-width: 5px; border-radius: 18px; padding: 20px 24px; }
+.stats > div:nth-child(1) { background: #f0faff; border-color: #b9e8ff; }
+.stats > div:nth-child(2) { background: #fff9e5; border-color: #ffe58a; }
+.stats > div:nth-child(3) { background: #f3ffe7; border-color: #c5efa0; }
+.stats strong { font-weight: 900; color: #087caf; }
+.stats > div:nth-child(2) strong { color: #b87100; }
+.stats > div:nth-child(3) strong { color: #4b8700; }
+.stats span:not(.big-glyph) { font-weight: 700; color: #626262; }
+.workspace, .sync-panel { border: 2px solid var(--line); border-radius: 20px; }
+.sync-panel { background: #f7fcff; border-color: #cbeafb; }
+.sync-panel h2 { color: #087caf; }
+.modes { border-bottom: 2px solid var(--line); gap: 12px; padding-bottom: 10px; }
+.modes button { border: 2px solid transparent; border-radius: 12px; padding: 12px; font-weight: 800; }
+.modes .active { background: #ddf4ff; border-color: #84d8ff; color: #087caf; }
+select, input[type="search"], input[type="text"], .detail-note,
+.review-fields input, .review-fields select { border: 2px solid var(--line); background: #f7f7f7; border-radius: 12px; }
+.search { border: 2px solid var(--line); border-radius: 12px; background: #f7f7f7; }
+.search input { border: 0; background: transparent; }
+.word-table th { background: #f7f7f7; color: #777; font-size: 11px; font-weight: 800; }
+.word-table td { border-color: var(--line); }
+.word-table tbody tr:hover { background: #fafff5; }
+.word-title:hover { color: var(--green); }
+.tag { border-radius: 8px; background: #efffdc; color: #4b7800; font-weight: 700; }
+.tag.review { background: #fff2c2; color: #966400; }
+.icon-btn { border: 2px solid var(--line); border-radius: 12px; box-shadow: 0 2px 0 var(--line); background: #fff; color: #087caf; }
+.icon-btn.starred { background: #fff4cc; border-color: #ffdc67; color: #ab7100; box-shadow: 0 2px 0 #ffdc67; }
+.primary, .listen-button { background: var(--action); color: #fff; border: 2px solid transparent; border-radius: 14px; box-shadow: 0 4px 0 var(--action-edge); font-weight: 800; }
+.primary:hover, .listen-button:hover { background: #61d809; }
+.secondary, .pagination button, .review-nav button, .review-card-actions button,
+.review-hidden-row button { border: 2px solid var(--line); border-radius: 12px; background: #fff; box-shadow: 0 3px 0 var(--line); font-weight: 700; }
+.secondary:hover, .pagination button:hover { background: #f7f7f7; }
+.primary:active:not(:disabled), .secondary:active:not(:disabled), .icon-btn:active:not(:disabled),
+.language-switch button:active:not(:disabled), .listen-button:active:not(:disabled),
+.review-ratings button:active:not(:disabled) { transform: translateY(3px); box-shadow: none; }
+.progress { height: 14px; background: #e5e5e5; border-radius: 20px; }
+.progress i { background: var(--action); border-radius: inherit; box-shadow: inset 0 4px 0 #83df37; }
+.study-card, .review-card { background: #fff; border: 2px solid var(--line); border-bottom-width: 5px; border-radius: 22px; }
+.feedback { background: #d7ffb8; color: #426b00; border-radius: 14px; }
+.feedback.wrong { background: #ffdfdf; color: #b52b2b; }
+.review-counts div { background: #f0faff; border: 2px solid #cbeafb; border-radius: 16px; }
+.review-counts strong { color: #087caf; }
+.review-settings-panel, .review-model-panel { border: 2px solid var(--line); border-radius: 16px; }
+.review-ratings button { border: 2px solid var(--line); border-radius: 14px; box-shadow: 0 3px 0 var(--line); }
+.review-ratings .rating-1 { background: #fff1f1; border-color: #ffb8b8; box-shadow: 0 3px 0 #ffb8b8; }
+.review-ratings .rating-3 { background: #efffdc; border-color: #a5ed6e; box-shadow: 0 3px 0 #a5ed6e; }
+.review-ratings .rating-4 { background: #e9f8ff; border-color: #84d8ff; box-shadow: 0 3px 0 #84d8ff; }
+dialog { border: 2px solid var(--line); border-radius: 24px; }
+#toast { background: #3c3c3c; font-weight: 700; }
+/* Account pages use the same palette and tactile controls. */
+body.account-page main { max-width: 720px; margin: 36px auto; padding: 0 20px 48px; }
+.account-page .brand { font-size: 22px; font-weight: 900; }
+.account-page section { border: 2px solid var(--line); border-bottom-width: 5px; border-radius: 22px; padding: 28px; }
+.account-page input { border: 2px solid var(--line); border-radius: 12px; background: #f7f7f7; color: var(--ink); }
+.account-page button, .account-page .primary-link { background: var(--action); border: 2px solid transparent; border-radius: 14px; box-shadow: 0 4px 0 var(--action-edge); font-weight: 800; }
+.account-page button:hover, .account-page .primary-link:hover { background: #61d809; }
+.account-page .secondary { background: #fff; color: #087caf; border-color: var(--line); box-shadow: 0 3px 0 var(--line); }
+.account-page .secondary:hover { background: #ddf4ff; }
+.account-page button:active:not(:disabled), .account-page .primary-link:active { transform: translateY(3px); box-shadow: none; }
+.account-page .notice { color: #4b7800; font-weight: 700; }
+.account-page .course-option { border: 2px solid var(--line); border-bottom-width: 4px; border-radius: 14px; padding: 16px; font-weight: 700; }
+.account-page .course-option:has(input:checked) { border-color: #a5ed6e; background: #efffdc; color: #4b7800; }
+.account-page .course-option input { accent-color: var(--action-edge); }
+@media (max-width: 700px) {
+  .sidebar { border-right: 0; border-bottom: 2px solid var(--line); }
+  .stats { gap: 8px; }
+  .stats > div, .stats > div:last-child { padding: 16px 10px; border-radius: 14px; }
+  .stats strong { font-size: 28px; }
+  .stats span:not(.big-glyph) { font-size: 11px; }
+  .modes { gap: 4px; }
+  .modes button { padding: 10px; }
+  .workspace { border-radius: 18px; }
+}
+@media (max-width: 440px) {
+  body.account-page main { margin: 24px auto; padding: 0 16px 32px; }
+  .account-page section { padding: 18px; }
+  .account-page .brand { font-size: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  button, a { transition: none; }
+}

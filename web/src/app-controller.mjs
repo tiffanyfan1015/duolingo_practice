@@ -213,7 +213,7 @@ export function mountApplication({ catalog, progress, review, audio, notify }) {
         reset();
         notify(`已匯入 ${count} 個字的紀錄`);
       } catch {
-        notify("無法匯入，請選擇詞間匯出的有效備份 JSON。");
+        notify("無法匯入，請選擇Duolingo 單字庫匯出的有效備份 JSON。");
       }
     },
   });

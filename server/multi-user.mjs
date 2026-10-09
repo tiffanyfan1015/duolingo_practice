@@ -3,7 +3,7 @@ import { accountRoutes, accountJson } from "./accounts/routes.mjs";
 import { api } from "./sync/routes.mjs";
 import { SyncError } from "./sync/duolingo.mjs";
 const accountPublicAssets = new Set([
-  "/account.html", "/account.js", "/styles/account.css",
+  "/account.html", "/account.js", "/styles/account.css", "/styles/playful.css",
   "/src/account-controller.mjs", "/src/services/account-client.mjs",
   "/src/ui/views/account.mjs", "/src/ui/views/shared.mjs", "/src/ui/account-events.mjs",
 ]);

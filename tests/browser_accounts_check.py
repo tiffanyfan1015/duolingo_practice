@@ -34,6 +34,7 @@ try:
         # Redirect protection is covered by Worker tests. Route interception
         # does not intercept the redirected navigation in this Chrome setup.
         page.goto('https://cijian.test/account')
+        assert page.locator('body').evaluate("el => getComputedStyle(el).getPropertyValue('--action').trim()") == '#58cc02'
 
         def register(name):
             form = page.locator('form[data-account="register"]')
