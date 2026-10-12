@@ -1,4 +1,6 @@
 import { mountSync } from "./sync-controller.mjs";
+import { createDictionaryClient } from "./services/dictionary-client.mjs";
+import { dictionaryView } from "./ui/views/dictionary.mjs";
 import { loadCatalog } from "./services/catalog.mjs";
 import {
   createSession,
@@ -15,6 +17,7 @@ import {
   showDialog,
   renderCourseSwitch,
   showNoCourses,
+  updateDictionaryDetail,
 } from "./ui/shell.mjs";
 import { detailView } from "./ui/views/word-detail.mjs";
 import { aboutView } from "./ui/views/about.mjs";
@@ -25,6 +28,8 @@ import {
 } from "./services/collection-backup.mjs";
 
 export function mountApplication({ catalog, progress, review, audio, notify }) {
+  const dictionary = createDictionaryClient({userId:catalog.user?.id});
+  let detailRequest = 0;
   const accountLink = document.querySelector("#account-link");
   if (accountLink) accountLink.hidden = !catalog.user;
   renderCourseSwitch(catalog.courses);
@@ -101,6 +106,17 @@ export function mountApplication({ catalog, progress, review, audio, notify }) {
     daily.reset();
     state.page = 0;
     render();
+  }
+
+  async function loadDictionary(selected, language) {
+    const version = ++detailRequest;
+    updateDictionaryDetail(selected.id,dictionaryView({status:"loading"},selected));
+    try {
+      const result = await dictionary.lookup(selected.text,language);
+      if (version === detailRequest) updateDictionaryDetail(selected.id,dictionaryView(result,selected));
+    } catch (error) {
+      if (version === detailRequest) updateDictionaryDetail(selected.id,dictionaryView({status:"error",message:error.message},selected));
+    }
   }
 
   bindEvents({
@@ -181,6 +197,7 @@ export function mountApplication({ catalog, progress, review, audio, notify }) {
       render();
     },
     showDetail(id) {
+      if (!word(id)) return;
       state.detailId = id;
       showDialog(
         detailView(word(id), {
@@ -190,6 +207,11 @@ export function mountApplication({ catalog, progress, review, audio, notify }) {
           course: course(),
         }),
       );
+      loadDictionary(word(id),course().language || state.language);
+    },
+    retryDictionary() {
+      const selected = word(state.detailId);
+      if (selected) loadDictionary(selected,course().language || state.language);
     },
     saveNote(note) {
       progress.setNote(state.detailId, note);

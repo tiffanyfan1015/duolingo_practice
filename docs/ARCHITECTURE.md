@@ -92,3 +92,16 @@ python tests/browser_check.py
 - `domain/fsrs-model.mjs` 驗證版本、語言、參數範圍；沿用 review-store 的語言設定保存參數與既有備份格式。review-controller 組織匯入／重設，事件與呈現維持分層。
 - `vocab_sync/pilot/` 分成 download（來源與快取完整性）、sources（詞典解析）、japanese（純活用規則）、report（抽樣與 HTML／JSON 報告）。`scripts/validate_vocabulary.py` 是薄入口。候選資料不寫回正式字庫；後續正式補充資料另建儲存層。
 - 私人備份與產出置於既有忽略的 data/、artifacts/；公開字典快取也不加入 Git。
+
+- 字庫驗證頁：`pilot/report.py` 負責抽樣與資料組合，`pilot/page.py` 為候選內容建立穩定指紋並包成私人獨立 HTML。呈現位於 `ui/views/validation.mjs`，事件位於 `ui/validation-events.mjs`，流程由 `validation-controller.mjs` 組織。`domain/validation.mjs` 驗證義項、P0 缺漏與匯入格式；獨立審核儲存由 `progress-store` 匯出的 `createValidationStore` 提供，實作在 `services/validation-store.mjs`。使用專屬備份種類及 key，與 FSRS 學習紀錄隔離。產出包含自動取得的字典候選與使用者保存的配對结果（兼容先前人工補充），不自動發布到正式字庫。
+
+- 字典 API：`pilot/dictionary_api.py` 負責逐字 HTTP、限量與快取；`pilot/wiki_parser.py` 純解析來源 HTML 為文字資料，不執行或嵌入來源 HTML。`domain/morphology-labels.mjs` 純轉換常見詞形標籤。完整字典下載保留為明確指定的替代路徑，不自動觸發。
+
+## 正式單字詳情與按需查字典
+
+- `app-controller` 啟動查詢、處理重試與請求版本；透過 shell 僅更新字典區域，不重繪筆記或讓已關閉詞條的舊回應覆蓋新內容。
+- `services/dictionary-client.mjs` 負責同源 API、當次頁面快取與原形查詢流程；`dictionary-parser.mjs` 在不啟用內容的 template 中解析來源，再輸出文字資料。來源 HTML 永不掛到頁面上。
+- `domain/dictionary.mjs` 提供保守的詞形比對、義項排序與中文表頭；不推測未取得的義項，不刪除其他意思。`ui/views/dictionary.mjs` 與 `styles/dictionary.css` 提供正式卡片、例句、折疊義項及詞形表。
+- `server/dictionary/routes.mjs` 提供固定上游、限量、限時、限流暫停與有界記憶體快取；必須先通過既有 Worker 登入驗證。本機 `vocab_sync/dictionary_http.py` 沿用 Python API transport 與七天快取，`serve_web.py` 僅組裝 handler。
+- 字典內容不覆寫 Duolingo 字庫，也不寫入學習紀錄或備份；筆記仍經 progress-store 保存。正式頁不需要人工審核，獨立驗證工具仍保留供查詢品質檢查。
+- 驗證：`tests/dictionary.test.mjs`、`tests/test_dictionary_http.py`、`tests/browser_dictionary_check.py`（合成 API 回應、獨立瀏覽器）。

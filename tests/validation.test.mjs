@@ -1,0 +1,64 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { emptyDecision, missingP0, candidateKey } from "../web/src/domain/validation.mjs";
+import { createValidationStore } from "../web/src/services/progress-store.mjs";
+import { validationView } from "../web/src/ui/views/validation.mjs";
+import { morphologyLabel } from "../web/src/domain/morphology-labels.mjs";
+const candidate = { validationId: "abc", lemma: "食べる", readings: [{text:"たべる"}], source: {name:"JMdict",url:"https://example.com"}, senses: [{pos:["Ichidan verb","transitive verb"],glosses:["to eat"],forms:["polite","te-form","negative","past"].map((t)=>({form:"x",tags:[t]}))}, {pos:["noun"],glosses:["other sense"]}] };
+const word = { id:"course:ja:食べます",text:"食べます",language:"ja",duolingoMeanings:["吃"],candidates:[candidate] };
+const report = {reportId:"report-a",words:[word],sources:{}};
+const key = candidateKey(word,candidate);
+const storage = () => { const data = new Map(); return {getItem:k=>data.get(k),setItem:(k,v)=>data.set(k,v)}; };
+test("validation checks dictionary data without requiring handwritten fields",()=>{
+  const decision = emptyDecision(candidate);
+  const automatic = structuredClone(candidate);
+  automatic.grammar = "他動詞 一段";
+  automatic.senses[0].glosses = ["吃"];
+  automatic.senses[0].glossLanguage = "zh";
+  automatic.senses[0].examples = [{text:"パンを食べる。", translation:"吃麵包。", translationLanguage:"zh"}];
+  decision.senses[0].selected = true;
+  assert.deepEqual(missingP0(word,automatic,decision),[]);
+  decision.senses[1].selected = true;
+  assert(missingP0(word,automatic,decision).some(x=>x.includes("義項 2：中文釋義")));
+  assert(!missingP0(word,candidate,decision).some(x=>x.includes("義項 2：基本動詞")));
+  const adj = {...candidate,senses:[{pos:["adjective (keiyoushi)"]}]};
+  assert(missingP0(word,adj,{senses:[{...decision.senses[0]}]}).some(x=>x.includes("形容詞")));
+});
+test("inflection labels describe Japanese forms and German person and tense in Chinese",()=>{
+  assert.equal(morphologyLabel({tags:["polite"]}), "ます形（禮貌形）");
+  assert.equal(morphologyLabel({tags:["present","singular","third-person"]}), "第三人稱單數現在式");
+  assert.equal(morphologyLabel({tags:["participle","past"]}), "過去分詞");
+  const html = validationView(report,{query:"",language:"",candidateIndex:0},{});
+  assert(!html.includes('name="s0-zh"'));
+  assert(!html.includes('data-example='));
+});
+test("review persistence and import isolate report revisions, reject malformed updates atomically",()=>{
+  const disk=storage(), store=createValidationStore(disk,report), d=emptyDecision(candidate);
+  d.status="accepted"; d.updatedAt=10;
+  assert.throws(()=>store.save(key,d),/義項/);
+  d.senses[0].selected=true; d.senses[0].zh="吃";
+  store.save(key,d);
+  assert.equal(createValidationStore(disk,report).decisions[key].senses[0].zh,"吃");
+  const exported=store.export(), older=structuredClone(exported);
+  older.decisions[key].updatedAt=1; older.decisions[key].note="older";
+  store.merge(older); assert.equal(store.decisions[key].note,"");
+  assert.throws(()=>store.merge({...exported,reportId:"different"}));
+  const bad=structuredClone(exported); bad.decisions["unknown"]={};
+  assert.throws(()=>store.merge(bad)); assert.deepEqual(store.export().decisions,exported.decisions);
+  assert.deepEqual(createValidationStore(disk,{...report,reportId:"different"}).decisions,{});
+});
+test("unavailable browser storage retains exportable draft and surfaces a warning",()=>{
+  const messages=[], store=createValidationStore({getItem(){throw Error();},setItem(){throw Error();}},report,m=>messages.push(m));
+  assert.equal(store.save(key,emptyDecision(candidate)),false);
+  assert(store.export().decisions[key]); assert.equal(messages.length,2);
+});
+test("dictionary and review strings are escaped and unsupported languages show only baseline",()=>{
+  const hostile=structuredClone(report);
+  hostile.words[0].candidates[0].source.url="javascript:alert(1)";
+  hostile.words[0].candidates[0].senses[0].glosses=["<img src=x onerror=alert(1)>"];
+  const html=validationView(hostile,{query:"",language:"",candidateIndex:0},{});
+  assert(!html.includes('<img src=x')); assert(!html.includes('href="javascript:'));
+  const generic={reportId:"b",words:[{id:"fr:a",text:"bonjour",language:"fr",duolingoMeanings:["hello"],candidates:[]}]};
+  const fallback=validationView(generic,{query:"",language:"",candidateIndex:0},{});
+  assert(fallback.includes("先保留 Duolingo 資料")); assert(!fallback.includes('id="decision"'));
+});

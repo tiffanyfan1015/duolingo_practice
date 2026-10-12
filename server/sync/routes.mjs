@@ -4,6 +4,7 @@ import { syncService, publicJob } from "./service.mjs";
 import { userRepository } from "./user-repository.mjs";
 import { accountCredential, publicAccount } from "../accounts/service.mjs";
 import { courseSettings } from "../courses/service.mjs";
+import { dictionaryRoute } from "../dictionary/routes.mjs";
 export const json = (data, status = 200) =>
   Response.json(data, {
     status,
@@ -36,6 +37,7 @@ async function baseCatalog(request, env) {
 export async function api(request, env, user = null) {
   const url = new URL(request.url);
   try {
+    if (url.pathname === "/api/dictionary") return await dictionaryRoute(request);
     if (
       url.pathname === "/api/sync/status" &&
       request.method === "GET" &&

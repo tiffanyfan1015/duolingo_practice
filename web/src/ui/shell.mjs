@@ -91,6 +91,12 @@ export function showDialog(html) {
   $("#detail").showModal();
 }
 
+export function updateDictionaryDetail(id, html) {
+  const target = $("#dictionary-content");
+  if (!$("#detail").open || target?.dataset.dictionaryWord !== id) return;
+  target.innerHTML = html;
+}
+
 export function showLoadError() {
   $("#content").innerHTML =
     '<p class="error">字庫尚未載入。請先執行 python build_web.py，再使用 python serve_web.py 開啟網站。</p>';

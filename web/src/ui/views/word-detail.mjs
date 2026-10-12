@@ -1,46 +1,36 @@
 import { esc, reading, unitLabel } from "./shared.mjs";
+import { dictionaryView } from "./dictionary.mjs";
 
 export function detailView(
   w,
   { record: r, language: lang, showRomaji, course: catalog },
 ) {
+  const meanings = [...new Set(w.meanings)].filter(Boolean);
   return /* HTML */ `<div class="eyebrow">
       ${esc(catalog.name)}
     </div>
     <h3 class="detail-title">${esc(w.text)}</h3>
-    ${reading(w, lang, showRomaji)}<button
+    <div class="detail-pronunciation">${reading(w, lang, showRomaji)}<button
       class="secondary"
       data-audio="${esc(w.id)}"
     >
       ♫ 播放發音
-    </button>
+    </button></div>
     <div class="detail-block">
-      <h4>
-        釋義 ·
-        ${catalog.sync?.rawMeanings ? "Duolingo 原始釋義" : "原始釋義轉繁體"}
-      </h4>
-      <p>${esc(w.meanings.join("、"))}</p>
+      <h4>正在學的意思 <span class="dictionary-badge">Duolingo</span></h4>
+      <p>${esc(meanings.slice(0,3).join("、"))}</p>
+      ${meanings.length > 3 ? `<details class="dictionary-expand"><summary>更多課程釋義</summary><p>${esc(meanings.slice(3).join("、"))}</p></details>` : ""}
     </div>
-    <div class="detail-block">
-      <h4>相關單元 · 由技能對應推定</h4>
+    <div id="dictionary-content" data-dictionary-word="${esc(w.id)}" aria-live="polite">${dictionaryView({status:["de","ja"].includes(lang) ? "loading" : "unsupported"},w)}</div>
+    <details class="detail-block">
+      <summary>相關單元</summary>
       ${w.units
         .map(
           (id) =>
             `<div class="detail-unit">${esc(unitLabel(catalog.units.find((u) => u.id === id)))}</div>`,
         )
         .join("")}
-    </div>
-    <div class="detail-block">
-      <h4>
-        ${lang === "de" ? "冠詞、複數、動詞變化與例句" : "詞形變化與例句"}
-      </h4>
-      <p class="hint">
-        目前 API
-        未提供，尚待補充。${lang === "ja"
-          ? "上方假名與羅馬拼音為自動轉換，遇到多音字請以課程發音確認。"
-          : ""}
-      </p>
-    </div>
+    </details>
     <div class="detail-block">
       <h4>我的筆記</h4>
       <textarea id="note" class="detail-note" placeholder="記下容易忘記的地方…">

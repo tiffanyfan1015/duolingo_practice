@@ -1,4 +1,5 @@
 import { gradeWord } from "../domain/learning.mjs";
+export { createValidationStore } from "./validation-store.mjs";
 
 export const STORAGE_KEY = "cijian-progress-v1";
 

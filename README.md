@@ -54,7 +54,7 @@ python scripts/cloud_build.py
 npx wrangler@4 deploy
 ```
 
-建置輸出為 `dist/`，預設不包含個人字庫。正式網站需使用 HTTPS。多人設定、憑證加密、資料隔離與舊資料移轉請閱讀 [MULTI_USER.md](MULTI_USER.md)；GitHub 自動部署欄位見 [WORKERS_DEPLOY.md](WORKERS_DEPLOY.md)。該文件中的 `owner`、`SITE_PASSWORD`、`DUOLINGO_JWT` 步驟僅適用舊單人模式，多人版使用自己的帳號與上述兩個 Secrets。
+建置輸出為 `dist/`，預設不包含個人字庫。正式網站需使用 HTTPS。多人設定、憑證加密、資料隔離與舊資料移轉請閱讀 [MULTI_USER.md](docs/MULTI_USER.md)；GitHub 自動部署欄位見 [WORKERS_DEPLOY.md](docs/WORKERS_DEPLOY.md)。該文件中的 `owner`、`SITE_PASSWORD`、`DUOLINGO_JWT` 步驟僅適用舊單人模式，多人版使用自己的帳號與上述兩個 Secrets。
 
 尚未提供忘記密碼、帳號刪除、管理介面或背景自動同步。Duolingo 的內部 API 可能變更或拒絕雲端請求。
 
@@ -101,7 +101,7 @@ Python 建置會使用 OpenCC 轉換中文釋義、pykakasi 產生日文假名�
 
 ## 開發與驗證
 
-開發前閱讀 [ARCHITECTURE.md](ARCHITECTURE.md) 與 [AGENTS.md](AGENTS.md)。前端分為 domain／services／ui／controller；後端分開帳號、課程與同步職責；Python 指令維持薄入口。
+開發前閱讀 [ARCHITECTURE.md](docs/ARCHITECTURE.md) 與 [AGENTS.md](AGENTS.md)。前端分為 domain／services／ui／controller；後端分開帳號、課程與同步職責；Python 指令維持薄入口。
 
 ```powershell
 node --test tests/*.test.mjs
@@ -124,9 +124,10 @@ python tests/browser_review_check.py
 
 ## 延伸文件
 
-- [MULTI_USER.md](MULTI_USER.md)：多人部署、Secrets、帳號隔離與移轉。
-- [WORKERS_DEPLOY.md](WORKERS_DEPLOY.md)：Workers 與 GitHub 部署設定。
-- [ANKI_DESIGN.md](ANKI_DESIGN.md)：每日複習的操作與排程設計。
-- [LEARNING_VALIDATION.md](LEARNING_VALIDATION.md)：FSRS 個人模型與字典／例句候選驗證。
-- [CLOUD_SYNC.md](CLOUD_SYNC.md)：同步流程及舊單人 Pages 模式的歷史說明。
-- [ARCHITECTURE.md](ARCHITECTURE.md)：模組分層與開發規範。
+- [MULTI_USER.md](docs/MULTI_USER.md)：多人部署、Secrets、帳號隔離與移轉。
+- [WORKERS_DEPLOY.md](docs/WORKERS_DEPLOY.md)：Workers 與 GitHub 部署設定。
+- [ANKI_DESIGN.md](docs/ANKI_DESIGN.md)：每日複習的操作與排程設計。
+- [LEARNING_VALIDATION.md](docs/LEARNING_VALIDATION.md)：FSRS 個人模型與字典／例句候選驗證。
+- [WORD_INFO.md](docs/WORD_INFO.md)：德日詞條內容規格。正式單字詳情會按需查字典，顯示其他義項、例句及中文詞形；不用先人工審核。`python scripts/validate_vocabulary.py` 另可產生獨立品質驗證報告，不覆寫正式字庫或學習紀錄。
+- [CLOUD_SYNC.md](docs/CLOUD_SYNC.md)：同步流程及舊單人 Pages 模式的歷史說明。
+- [ARCHITECTURE.md](docs/ARCHITECTURE.md)：模組分層與開發規範。

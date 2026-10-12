@@ -79,7 +79,7 @@ def japanese_candidates(path, targets):
                                'restrictedReadings': [el.text for el in sense.findall('stagr')],
                                'examples': examples})
             lemmas = set(spellings) | {r['text'] for r in readings}
-            for lemma in lemmas:
+            for lemma in sorted(lemmas):
                 valid_readings = [r for r in readings if
                     (lemma not in spellings and r['text'] == lemma) or
                     (lemma in spellings and not r['kanaOnly'] and

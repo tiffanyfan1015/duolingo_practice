@@ -1,8 +1,9 @@
 """Serve only the generated website, never credentials or source exports."""
 import argparse
 from functools import partial
-from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from http.server import ThreadingHTTPServer
 from pathlib import Path
+from vocab_sync.dictionary_http import dictionary_handler
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -14,4 +15,4 @@ if __name__ == '__main__':
         parser.error('Run python build_web.py first')
     host = '0.0.0.0' if args.lan else '127.0.0.1'
     print(f'Vocabulary site: http://127.0.0.1:{args.port} (LAN enabled: {args.lan})', flush=True)
-    ThreadingHTTPServer((host, args.port), partial(SimpleHTTPRequestHandler, directory=str(root))).serve_forever()
+    ThreadingHTTPServer((host, args.port), partial(dictionary_handler(root.parent), directory=str(root))).serve_forever()

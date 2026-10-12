@@ -28,7 +28,8 @@ export function bindEvents(actions) {
     const star = target.closest("[data-star]");
     const detail = target.closest("[data-detail]");
     const grade = target.closest("[data-grade]");
-    if (audio) actions.play(audio.dataset.audio);
+    if (target.closest("[data-dictionary-retry]")) actions.retryDictionary();
+    else if (audio) actions.play(audio.dataset.audio);
     else if (star) actions.toggleStar(star.dataset.star);
     else if (detail) actions.showDetail(detail.dataset.detail);
     else if (grade) actions.grade(grade.dataset.grade === "true");

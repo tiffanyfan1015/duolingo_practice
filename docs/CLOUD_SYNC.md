@@ -64,3 +64,9 @@ python tests/browser_sync_check.py
 ```
 
 同步測試使用合成 Duolingo 回應及真正 SQLite 交易來驗證 D1 查詢；手機 UI 使用模擬雲端端點，不會讀取真實登入憑證。
+
+## 字典查詢
+
+`GET /api/dictionary?provider=wiki&term=...`（或 `provider=jisho`）沿用網站登入保護，限制詞長、固定上游網址、15 秒上游逾時及 2 MB 回應上限。上游不接收本站 Cookie、登入資訊或 Duolingo token。前端只連同源端點，不需放寬 CSP。
+
+查詢按需執行；Worker 的記憶體快取最多 32 筆／8 MB，保存至多七天，冷啟動可能清空。429 限流會依 Retry-After 暫停該上游的新請求，既有快取可讀。字典功能不需新增 D1 表、API 金鑰或環境變數。新增程式需重新建置與部署才會套用到線上；不會自行部署。

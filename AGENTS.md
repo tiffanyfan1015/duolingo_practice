@@ -1,6 +1,6 @@
-﻿# Repository architecture rules
+# Repository architecture rules
 
-Read ARCHITECTURE.md before implementation changes.
+Read docs/ARCHITECTURE.md before implementation changes.
 
 - Keep web/app.js and root Python commands as thin entry points.
 - Keep learning rules in web/src/domain; no DOM, storage, or network dependencies there.
