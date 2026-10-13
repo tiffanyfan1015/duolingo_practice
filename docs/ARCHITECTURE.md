@@ -1,6 +1,15 @@
 # 專案架構
 
-本專案採用原生 ES modules 與 Python package，依責任分層。新增功能沿用以下邊界；不將 HTML、業務規則、儲存或 API 呼叫放回入口檔。
+本專案採用 TypeScript Worker、原生 JavaScript ES modules 前端與 Python package，依責任分層。新增功能沿用以下邊界；不將 HTML、業務規則、儲存或 API 呼叫放回入口檔。
+
+## TypeScript 與建置
+
+- `server/**/*.ts` 使用 strict mode；`server/types.ts` 定義 Worker 環境、帳號、課程、字庫和同步工作。D1 與 Fetcher 使用 Cloudflare 官方型別，外部 API 回應保留 `unknown` 並由 domain 驗證。
+- `shared/study.ts` 定義跨裝置紀錄及 API 契約；`domain/study-validation.mjs` 與 `services/study-client.mjs` 使用 `@ts-check` 與 JSDoc 引用。其餘前端 JS 尚未全面型別化，瀏覽器不直接載入 `.ts`，也不需要先建置才能啟動原有 Python 靜態網站。
+- `tsconfig.json` 檢查後端；`tsconfig.browser.json` 檢查上述前端模組，分開 Workers 與 DOM 全域型別。`npm run typecheck` 同時檢查兩者。
+- Node.js 24 以上可直接執行測試所匯入的 `.ts`；`package.json` 明確使用 ESM。型別 import 使用 `import type`，不使用需要額外轉換的 enum 或 parameter properties。
+- `scripts/cloud-build.mjs` 先執行兩套型別檢查，再用 esbuild 打包 Worker，按允許清單複製靜態檔。`scripts/cloud_build.py` 是保留原指令與 `build()` 介面的薄包裝；先安裝 `npm ci`。`npm run test:build` 驗證實際產出的 Worker 登入、D1 學習同步與資源清單。
+- `wrangler.jsonc` 指向 `server/worker.ts`，Workers 部署由 Wrangler 編譯；Pages 相容產物為 `dist/_worker.js`。資料表、localStorage key、備份 schema 不因語言遷移改變。
 
 ## 前端
 
@@ -82,7 +91,7 @@ python tests/browser_check.py
 
 `server/courses/` 分離課程探索與啟用規則、版本化設定儲存、API 流程。`user_course_settings` 按使用者及連線隔離；同步資料表的 language 欄位保存穩定課程 key，實際目標語言另存 language／learningLanguage。既有中文教學德文、日文保留 de／ja key，新課程使用上游課程 ID 形成獨立 key。前端 `domain/languages.mjs` 統一語言名稱及語音代碼，`ui/views/courses.mjs` 純呈現動態課程切換。停用課程不刪除資料，所有課程停用時顯示設定入口；備份 schema 保持相容。
 
-多人版本見 [MULTI_USER.md](MULTI_USER.md)。`server/accounts/` 分開加密、資料庫、帳號流程與 HTTP 路由；`server/multi-user.mjs` 組裝登入與資源保護。`sync/user-repository.mjs` 提供以用戶及連線分區的同步儲存，沿用原同步 service／domain。`account-controller`、`account-client`、`ui/account-events`、`ui/views/account` 分別處理前端流程、HTTP、事件與純呈現。雲端多人版允許在專用帳號表單提交 Duolingo 憑證，後端驗證並加密保存，取代早期單人網站不接收憑證的限制。原 Python CLI 仍不保存憑證。
+多人版本見 [MULTI_USER.md](MULTI_USER.md)。`server/accounts/` 分開加密、資料庫、帳號流程與 HTTP 路由；`server/multi-user.ts` 組裝登入與資源保護。`sync/user-repository.ts` 提供以用戶及連線分區的同步儲存，沿用原同步 service／domain。`account-controller`、`account-client`、`ui/account-events`、`ui/views/account` 分別處理前端流程、HTTP、事件與純呈現。雲端多人版允許在專用帳號表單提交 Duolingo 憑證，後端驗證並加密保存，取代早期單人網站不接收憑證的限制。原 Python CLI 仍不保存憑證。
 
 新增 server/ 分層，詳見 [CLOUD_SYNC.md](CLOUD_SYNC.md)。Duolingo API transport、同步領域規則、D1 repository、流程 service、HTTP routes 各自分開；worker 是登入與路由薄入口。前端同步亦拆成 controller／service／view。`scripts/cloud_build.py` 生成單一部署 Worker，不能將生成檔當作原始碼維護。私人字庫與憑證不進 GitHub。
 
@@ -102,7 +111,7 @@ python tests/browser_check.py
 - `app-controller` 啟動查詢、處理重試與請求版本；透過 shell 僅更新字典區域，不重繪筆記或讓已關閉詞條的舊回應覆蓋新內容。
 - `services/dictionary-client.mjs` 負責同源 API、當次頁面快取與原形查詢流程；`dictionary-parser.mjs` 在不啟用內容的 template 中解析來源，再輸出文字資料。來源 HTML 永不掛到頁面上。
 - `domain/dictionary.mjs` 提供保守的詞形比對、義項排序與中文表頭；不推測未取得的義項，不刪除其他意思。`ui/views/dictionary.mjs` 與 `styles/dictionary.css` 提供正式卡片、例句、折疊義項及詞形表。
-- `server/dictionary/routes.mjs` 提供固定上游、限量、限時、限流暫停與有界記憶體快取；必須先通過既有 Worker 登入驗證。本機 `vocab_sync/dictionary_http.py` 沿用 Python API transport 與七天快取，`serve_web.py` 僅組裝 handler。
+- `server/dictionary/routes.ts` 提供固定上游、限量、限時、限流暫停與有界記憶體快取；必須先通過既有 Worker 登入驗證。本機 `vocab_sync/dictionary_http.py` 沿用 Python API transport 與七天快取，`serve_web.py` 僅組裝 handler。
 - 字典內容不覆寫 Duolingo 字庫，也不寫入學習紀錄或備份；筆記仍經 progress-store 保存。正式頁不需要人工審核，獨立驗證工具仍保留供查詢品質檢查。
 - 驗證：`tests/dictionary.test.mjs`、`tests/test_dictionary_http.py`、`tests/browser_dictionary_check.py`（合成 API 回應、獨立瀏覽器）。
 

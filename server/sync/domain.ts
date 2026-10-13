@@ -1,18 +1,20 @@
-import { SyncError } from "./duolingo.mjs";
+import { SyncError } from "./duolingo.ts";
 import { languageName } from "../../web/src/domain/languages.mjs";
-export function courseState(profile, language, target = null) {
-  const course = profile?.currentCourse;
+import type { CourseSelection, CourseSnapshot, Skill, PageState, Lexeme, SyncJob, CatalogCourse } from "../types.ts";
+import { record } from "../types.ts";
+export function courseState(profile: unknown, language: string, target: CourseSelection | null = null): CourseSnapshot {
+  const course = record(record(profile).currentCourse);
   if (!course || course.learningLanguage !== language || (target && (course.id !== target.courseId || course.fromLanguage !== target.fromLanguage)))
     throw new SyncError(
       `請先在 Duolingo 切換到所選的${languageName(language)}課程，再按同步。`,
     );
-  if (!course.id || (!target && course.fromLanguage !== "zh"))
+  if (typeof course.id !== "string" || !course.id || typeof course.fromLanguage !== "string" || (!target && course.fromLanguage !== "zh"))
     throw new SyncError("目前只支援以中文學習的德文／日文課程。");
-  const found = new Map();
-  function add(id, levels, sessions) {
-    id = typeof id === "object" ? id?.id : id;
-    levels = Number.isInteger(levels) ? levels : 0;
-    sessions = Number.isInteger(sessions) ? sessions : 0;
+  const found = new Map<string, Skill>();
+  function add(rawId: unknown, rawLevels: unknown, rawSessions: unknown) {
+    const id = typeof rawId === "object" ? record(rawId).id : rawId;
+    const levels = typeof rawLevels === "number" && Number.isInteger(rawLevels) ? rawLevels : 0;
+    const sessions = typeof rawSessions === "number" && Number.isInteger(rawSessions) ? rawSessions : 0;
     if (typeof id !== "string" || !id || Math.max(levels, sessions) <= 0)
       return;
     const previous = found.get(id);
@@ -22,28 +24,30 @@ export function courseState(profile, language, target = null) {
       finishedSessions: Math.max(0, sessions, previous?.finishedSessions || 0),
     });
   }
-  function walk(value) {
+  function walk(value: unknown) {
     if (Array.isArray(value)) value.forEach(walk);
     else if (value && typeof value === "object")
       add(
-        value.id,
-        value.finishedLevels,
-        value.finishedSessions ?? value.finishedLessons,
+        record(value).id,
+        record(value).finishedLevels,
+        record(value).finishedSessions ?? record(value).finishedLessons,
       );
   }
   walk(course.skills);
   const units = [];
   for (const [sectionIndex, section] of (
-    course.pathSectioned || []
+    Array.isArray(course.pathSectioned) ? course.pathSectioned : []
   ).entries()) {
-    for (const [unitIndex, unit] of (section.units || []).entries()) {
-      const ids = new Set();
-      for (const level of unit.levels || []) {
-        const info = level.pathLevelClientData || {};
+    const sectionData = record(section);
+    for (const [unitIndex, rawUnit] of (Array.isArray(sectionData.units) ? sectionData.units : []).entries()) {
+      const unit = record(rawUnit);
+      const ids = new Set<string>();
+      for (const level of Array.isArray(unit.levels) ? unit.levels : []) {
+        const info = record(record(level).pathLevelClientData);
         add(info.skillId, info.finishedLevels, info.finishedSessions);
-        for (const data of [info, level.pathLevelMetadata || {}]) {
+        for (const data of [info, record(record(level).pathLevelMetadata)]) {
           const id =
-            typeof data.skillId === "object" ? data.skillId?.id : data.skillId;
+            typeof data.skillId === "object" ? record(data.skillId).id : data.skillId;
           if (typeof id === "string") ids.add(id);
         }
       }
@@ -51,7 +55,7 @@ export function courseState(profile, language, target = null) {
         id: `s${sectionIndex + 1}u${unitIndex + 1}`,
         section: sectionIndex + 1,
         position: unitIndex + 1,
-        title: unit.teachingObjective || unit.title || "未命名單元",
+        title: typeof unit.teachingObjective === "string" && unit.teachingObjective || typeof unit.title === "string" && unit.title || "未命名單元",
         skillIds: [...ids],
       });
     }
@@ -67,30 +71,35 @@ export function courseState(profile, language, target = null) {
     units,
   };
 }
-export const fingerprint = (state) =>
+export const fingerprint = (state: CourseSnapshot) =>
   JSON.stringify([state.course, state.skills, state.units]);
-export function appendPage(state, page, allowEmpty = false) {
+export function appendPage(state: PageState, input: unknown, allowEmpty = false): PageState {
+  const page = record(input), pagination = record(page.pagination);
   if (
     !Array.isArray(page?.learnedLexemes) ||
-    !page.pagination ||
-    !Object.hasOwn(page.pagination, "nextStartIndex")
+    !Object.hasOwn(pagination, "nextStartIndex")
   )
     throw new SyncError("API 分頁格式不符，保留原字庫。");
-  const batch = page.learnedLexemes,
-    next = page.pagination.nextStartIndex,
-    total = page.pagination.totalLexemes;
+  const rawBatch: unknown[] = page.learnedLexemes,
+    next = pagination.nextStartIndex,
+    total = pagination.totalLexemes;
   if (
-    batch.some(
-      (w) =>
+    rawBatch.some(
+      (value) => {
+        const w = record(value);
+        return (
         typeof w?.text !== "string" ||
         !w.text ||
         !Array.isArray(w.translations) ||
-        w.translations.some((t) => typeof t !== "string"),
+        w.translations.some((t: unknown) => typeof t !== "string") ||
+        (w.audioURL != null && typeof w.audioURL !== "string")
+        );
+      },
     )
   )
     throw new SyncError("API 單字格式不符，保留原字庫。");
   if (
-    !Number.isInteger(total) ||
+    typeof total !== "number" || !Number.isInteger(total) ||
     total < 0 ||
     total > 10000 ||
     (state.expected !== null && state.expected !== total)
@@ -100,9 +109,11 @@ export function appendPage(state, page, allowEmpty = false) {
     state.seen.includes(state.next) ||
     state.seen.length >= 200 ||
     (next !== null &&
-      (!Number.isInteger(next) || next <= state.next || !batch.length))
+      (typeof next !== "number" || !Number.isInteger(next) || state.next === null || next <= state.next || !rawBatch.length))
   )
     throw new SyncError("API 分頁重複或未前進，保留原字庫。");
+  // Every required lexeme field was checked above before entering the job state.
+  const batch = rawBatch as Lexeme[];
   const words = [...state.words, ...batch];
   if (
     new Set(words.map((w) => w.text)).size !== words.length ||
@@ -113,13 +124,13 @@ export function appendPage(state, page, allowEmpty = false) {
     throw new SyncError("API 單字不完整或重複，保留原字庫。");
   return { words, expected: total, next, seen: [...state.seen, state.next] };
 }
-export const emptyPage = () => ({
+export const emptyPage = (): PageState => ({
   words: [],
   expected: null,
   next: 0,
   seen: [],
 });
-export function transform(job, previous) {
+export function transform(job: SyncJob, previous: CatalogCourse | undefined): CatalogCourse {
   const baseline = new Set(job.words.map((w) => w.text));
   const sets = job.probes.map((probe) => new Set(probe.words));
   if (sets.some((set) => [...set].some((text) => !baseline.has(text))))

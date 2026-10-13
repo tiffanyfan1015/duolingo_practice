@@ -1,15 +1,16 @@
-import { accountContext, requireAccount } from "./accounts/service.mjs";
-import { accountRoutes, accountJson } from "./accounts/routes.mjs";
-import { api } from "./sync/routes.mjs";
-import { SyncError } from "./sync/duolingo.mjs";
-import { studyRoutes } from "./study/routes.mjs";
+import type { Env } from "./types.ts";
+import { accountContext, requireAccount } from "./accounts/service.ts";
+import { accountRoutes, accountJson } from "./accounts/routes.ts";
+import { api } from "./sync/routes.ts";
+import { SyncError } from "./sync/duolingo.ts";
+import { studyRoutes } from "./study/routes.ts";
 const accountPublicAssets = new Set([
   "/account.html", "/account.js", "/styles/account.css", "/styles/playful.css",
   "/src/account-controller.mjs", "/src/services/account-client.mjs",
   "/src/ui/views/account.mjs", "/src/ui/views/shared.mjs", "/src/ui/account-events.mjs",
 ]);
-const studyAsset = (path) => ["/", "/index.html", "/app.js", "/style.css", "/learning.mjs"].includes(path) || /^\/(src|styles|vendor)\/[a-zA-Z0-9_./-]+\.(mjs|js|css|map)$/.test(path);
-export async function multiUserFetch(request, env) {
+const studyAsset = (path: string) => ["/", "/index.html", "/app.js", "/style.css", "/learning.mjs"].includes(path) || /^\/(src|styles|vendor)\/[a-zA-Z0-9_./-]+\.(mjs|js|css|map)$/.test(path);
+export async function multiUserFetch(request: Request, env: Env) {
   try {
     const url = new URL(request.url);
     if (url.protocol !== "https:") return accountJson({ error: "多人模式需要 HTTPS。" }, 400);

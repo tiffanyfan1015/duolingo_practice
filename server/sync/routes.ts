@@ -1,11 +1,13 @@
-import { repository } from "./repository.mjs";
-import { createDuolingoClient, SyncError } from "./duolingo.mjs";
-import { syncService, publicJob } from "./service.mjs";
-import { userRepository } from "./user-repository.mjs";
-import { accountCredential, publicAccount } from "../accounts/service.mjs";
-import { courseSettings } from "../courses/service.mjs";
-import { dictionaryRoute } from "../dictionary/routes.mjs";
-export const json = (data, status = 200) =>
+import type { Account, Env, Catalog } from "../types.ts";
+import { record } from "../types.ts";
+import { repository } from "./repository.ts";
+import { createDuolingoClient, SyncError } from "./duolingo.ts";
+import { syncService, publicJob } from "./service.ts";
+import { userRepository } from "./user-repository.ts";
+import { accountCredential, publicAccount } from "../accounts/service.ts";
+import { courseSettings } from "../courses/service.ts";
+import { dictionaryRoute } from "../dictionary/routes.ts";
+export const json = (data: unknown, status = 200) =>
   Response.json(data, {
     status,
     headers: {
@@ -13,13 +15,13 @@ export const json = (data, status = 200) =>
       "X-Content-Type-Options": "nosniff",
     },
   });
-async function baseCatalog(request, env) {
+async function baseCatalog(request: Request, env: Env): Promise<Catalog> {
   try {
     const response = await env.ASSETS.fetch(
       new Request(new URL("/data.json", request.url)),
     );
     if (response.ok) {
-      const data = await response.json();
+      const data = await response.json<Catalog>();
       if (Array.isArray(data.courses)) return data;
     }
   } catch {
@@ -34,7 +36,7 @@ async function baseCatalog(request, env) {
     })),
   };
 }
-export async function api(request, env, user = null) {
+export async function api(request: Request, env: Env, user: Account | null = null) {
   const url = new URL(request.url);
   try {
     if (url.pathname === "/api/dictionary") return await dictionaryRoute(request);
@@ -50,7 +52,7 @@ export async function api(request, env, user = null) {
     await repo.init();
     const selected = user ? (await courseSettings(env, user)).courses.filter((c) => c.active && c.available) : null;
     if (url.pathname === "/api/catalog" && request.method === "GET") {
-      const base = user ? { courses: selected.map((c) => ({ ...c, words: [], units: [] })) } : await baseCatalog(request, env),
+      const base = user ? { courses: selected!.map((c) => ({ ...c, words: [], units: [] })) } : await baseCatalog(request, env),
         saved = await repo.courses();
       return json({
         ...(user ? { user: publicAccount(user) } : {}),
@@ -59,7 +61,7 @@ export async function api(request, env, user = null) {
         ),
       });
     }
-    const language = url.searchParams.get("language");
+    const language = url.searchParams.get("language") || "";
     const target = selected?.find((c) => c.id === language);
     if (user && !target) throw new SyncError("請先在帳號頁啟用這個課程。", 409);
     if (!user && !["de", "ja"].includes(language))
@@ -84,7 +86,7 @@ export async function api(request, env, user = null) {
       throw new SyncError("同步請求過大。", 413);
     const text = await request.text();
     if (text.length > 1024) throw new SyncError("同步請求過大。", 413);
-    let body;
+    let body: unknown;
     try {
       body = JSON.parse(text);
     } catch {
@@ -92,6 +94,7 @@ export async function api(request, env, user = null) {
     }
     if (!body || typeof body !== "object" || Array.isArray(body))
       throw new SyncError("Invalid request body.");
+    const input = record(body);
     const client = createDuolingoClient(user ? await accountCredential(user, env) : env.DUOLINGO_JWT);
     const service = syncService(
       repo,
@@ -103,10 +106,10 @@ export async function api(request, env, user = null) {
     );
     if (url.pathname === "/api/sync/start")
       return json({
-        job: await service.start(language, body.restart === true),
+        job: await service.start(language, input.restart === true),
       });
-    if (url.pathname === "/api/sync/step" && typeof body.id === "string")
-      return json({ job: await service.step(language, body.id) });
+    if (url.pathname === "/api/sync/step" && typeof input.id === "string")
+      return json({ job: await service.step(language, input.id) });
     throw new SyncError("找不到同步操作。", 404);
   } catch (error) {
     return json(

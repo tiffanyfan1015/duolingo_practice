@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import worker from "../server/worker.mjs";
+import worker from "../server/worker.ts";
 import { testDatabase } from "./helpers/database.mjs";
-import { discoverCourses } from "../server/courses/domain.mjs";
+import { discoverCourses } from "../server/courses/domain.ts";
 import { createProgressStore } from "../web/src/services/progress-store.mjs";
 import { createReviewStore } from "../web/src/services/review-store.mjs";
 import { exportCollection, importCollection } from "../web/src/services/collection-backup.mjs";

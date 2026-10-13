@@ -1,6 +1,6 @@
 {
   "name": "cijian-private",
-  "main": "server/worker.mjs",
+  "main": "server/worker.ts",
   "compatibility_date": "2026-09-01",
   "workers_dev": true,
   "vars": { "MULTI_USER": "true" },

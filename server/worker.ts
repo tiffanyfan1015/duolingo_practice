@@ -1,9 +1,10 @@
-import { authenticate } from "./basic-auth.mjs";
-import { api } from "./sync/routes.mjs";
-import { multiUserFetch } from "./multi-user.mjs";
+import type { Env } from "./types.ts";
+import { authenticate } from "./basic-auth.ts";
+import { api } from "./sync/routes.ts";
+import { multiUserFetch } from "./multi-user.ts";
 
 export default {
-  async fetch(request, env) {
+  async fetch(request: Request, env: Env) {
     if (env.MULTI_USER === "true") return multiUserFetch(request, env);
     const state = await authenticate(request, env.SITE_PASSWORD);
     if (state === "unconfigured")

@@ -19,7 +19,7 @@
 GitHub 儲存庫由使用者建立；目前沒有替使用者建立或上傳儲存庫。
 
 1. 將程式上傳到自己的 GitHub 私人儲存庫，沿用 `.gitignore`。不要強制加入 `data/`、`web/data.json`、`artifacts/`、`.dev.vars` 或憑證。
-2. Cloudflare Pages 建立 **Git integration** 專案，連接該儲存庫。建置命令：`python3 scripts/cloud_build.py`；輸出目錄：`dist`；框架選 None。
+2. Cloudflare Pages 建立 **Git integration** 專案，連接該儲存庫。建置命令：`npm ci && npm run build:cloud`；輸出目錄：`dist`；框架選 None。
 3. 建立 D1 資料庫，在 Pages 的正式與預覽環境綁定，名稱 **DB**。資料表在第一次 API 請求時自動建立。
 4. 在正式環境設定 Secret **SITE_PASSWORD**：使用密碼管理器產生至少 20 字元的隨機專用密碼。登入帳號固定為 `owner`。不要填 Duolingo 密碼。
 5. 設定 Secret **DUOLINGO_JWT**：放入自己 Duolingo 的 `jwt_token`。只存 Cloudflare Secret，不放 GitHub 或前端。不需要把憑證貼到聊天。
@@ -38,13 +38,15 @@ Github 建置不攜帶個人字庫，初次開啟會顯示空白字庫，按同�
 
 ## 架構
 
-- `server/basic-auth.mjs`：伺服器登入驗證。
-- `server/worker.mjs`：薄路由入口，先驗證登入才提供任何資源。
-- `server/sync/duolingo.mjs`：固定來源 API、憑證檢查與連線錯誤。
-- `server/sync/domain.mjs`：真實技能、分頁驗證、候選單元與字庫轉換。
-- `server/sync/repository.mjs`：D1 儲存、版本檢查、原子發佈。
-- `server/sync/service.mjs`：可接續的分批同步流程。
-- `server/sync/routes.mjs`：API 邊界、同源檢查、錯誤訊息。
+開發與建置使用 Node.js 24 以上，先執行 `npm ci`。Worker 原始碼為 TypeScript，`npm run build:cloud` 會先檢查型別再打包；原 `python scripts/cloud_build.py` 指令仍相容。
+
+- `server/basic-auth.ts`：伺服器登入驗證。
+- `server/worker.ts`：薄路由入口，先驗證登入才提供任何資源。
+- `server/sync/duolingo.ts`：固定來源 API、憑證檢查與連線錯誤。
+- `server/sync/domain.ts`：真實技能、分頁驗證、候選單元與字庫轉換。
+- `server/sync/repository.ts`：D1 儲存、版本檢查、原子發佈。
+- `server/sync/service.ts`：可接續的分批同步流程。
+- `server/sync/routes.ts`：API 邊界、同源檢查、錯誤訊息。
 - `web/src/sync-controller.mjs`、`services/sync-client.mjs`、`ui/views/sync.mjs`：手機操作、HTTP 與畫面分層。
 - `scripts/cloud_build.py`：由上述模組生成部署目錄，原始碼維持分層。
 
@@ -55,7 +57,8 @@ API：`GET /api/catalog`、`GET /api/sync/status?language=de`、`POST /api/sync/
 ```powershell
 node --test tests/*.test.mjs
 python -m unittest discover -s tests -v
-python scripts/cloud_build.py
+npm ci
+npm run build:cloud
 node --check dist/_worker.js
 # 先開 python serve_web.py，再執行：
 python tests/browser_check.py

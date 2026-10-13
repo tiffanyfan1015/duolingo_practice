@@ -43,20 +43,21 @@ npm run preview
 
 同步只讀取資料，不會代為切換課程、完成課程或提交答案。釋義沿用課程的教學語言，不會自動全部翻譯成中文。
 
-字庫與課程啟用設定儲存在伺服器；複習、收藏、筆記與 FSRS 個人參數仍按帳號儲存在目前瀏覽器。不同裝置不會自動同步學習紀錄，請使用備份／匯入搬移；清除網站資料會清除本機紀錄。
+字庫與課程啟用設定儲存在伺服器；複習、收藏、筆記與 FSRS 個人參數會先儲存在目前瀏覽器，再同步至 D1。同一帳號可在不同裝置同步學習紀錄，離線修改會等連線恢復後上傳；同欄位有衝突時由使用者選擇。清除網站資料前，請確認同步完成或匯出備份。
 
 ## 部署多人版
 
 目前 `wrangler.jsonc` 預設 `MULTI_USER = "true"`，使用 Cloudflare Workers 與 D1。部署前須填入真正的 D1 Database ID，並設定 `CREDENTIAL_KEY` 與 `REGISTRATION_CODE` Secrets。
 
 ```powershell
-python scripts/cloud_build.py
+npm ci
+npm run build:cloud
 npx wrangler@4 deploy
 ```
 
 建置輸出為 `dist/`，預設不包含個人字庫。正式網站需使用 HTTPS。多人設定、憑證加密、資料隔離與舊資料移轉請閱讀 [MULTI_USER.md](docs/MULTI_USER.md)；GitHub 自動部署欄位見 [WORKERS_DEPLOY.md](docs/WORKERS_DEPLOY.md)。該文件中的 `owner`、`SITE_PASSWORD`、`DUOLINGO_JWT` 步驟僅適用舊單人模式，多人版使用自己的帳號與上述兩個 Secrets。
 
-尚未提供忘記密碼、帳號刪除、管理介面或背景自動同步。Duolingo 的內部 API 可能變更或拒絕雲端請求。
+尚未提供忘記密碼、帳號刪除、管理介面或 Duolingo 字庫背景自動同步。Duolingo 的內部 API 可能變更或拒絕雲端請求。
 
 ## Python 本機工具與靜態網站
 
@@ -103,24 +104,29 @@ Python 建置會使用 OpenCC 轉換中文釋義、pykakasi 產生日文假名�
 
 開發前閱讀 [ARCHITECTURE.md](docs/ARCHITECTURE.md) 與 [AGENTS.md](AGENTS.md)。前端分為 domain／services／ui／controller；後端分開帳號、課程與同步職責；Python 指令維持薄入口。
 
+後端 `server/` 使用 TypeScript strict mode，入口為 `server/worker.ts`；跨裝置資料契約位於 `shared/study.ts`，前端同步 API 與資料驗證透過 JSDoc 使用同一套型別。前端其餘部分維持原生 JavaScript，尚未導入 Vue。開發及建置使用 Node.js 24 以上，先執行 `npm ci` 安裝鎖定依賴。
+
 ```powershell
+npm run typecheck
 node --test tests/*.test.mjs
 python -m unittest discover -s tests -v
-python scripts/cloud_build.py
-node --check dist/_worker.js
+npm run test:build
 ```
+
+`npm run build:cloud` 先檢查型別，再使用 esbuild 產生 `dist/_worker.js` 和靜態資源。既有 `python scripts/cloud_build.py` 仍可使用，會呼叫同一套建置流程；純 Python 匯出及靜態網站指令維持原樣。
 
 測試使用合成資料，不需要真實 Duolingo 憑證。瀏覽器整合測試需要安裝在 `.deps` 的 Playwright 與本機 Chrome，使用獨立無頭瀏覽器：
 
 ```powershell
 # 自行啟動隔離的多人測試伺服器
 python tests/browser_accounts_check.py
+python tests/browser_study_sync_check.py
 # 以下需先啟動 python serve_web.py，並備妥靜態字庫
 python tests/browser_check.py
 python tests/browser_review_check.py
 ```
 
-瀏覽器所需的 FSRS 模組已放在 `web/vendor/`。只有重建該模組時才需執行 `npm ci --ignore-scripts` 與 `node scripts/vendor-fsrs.mjs`。憑證、個人單字匯出與學習紀錄不得提交 Git。
+瀏覽器所需的 FSRS 模組已放在 `web/vendor/`，預覽與 Python 靜態網站可直接使用；後端型別檢查與雲端建置需要先安裝 npm 依賴。重建 FSRS 模組使用 `npm run vendor`。憑證、個人單字匯出與學習紀錄不得提交 Git。
 
 ## 延伸文件
 

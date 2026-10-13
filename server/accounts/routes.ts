@@ -1,7 +1,8 @@
-import { accountAction, publicAccount } from "./service.mjs";
-import { SyncError } from "../sync/duolingo.mjs";
-import { courseSettings } from "../courses/service.mjs";
-async function accountDetails(user, env) {
+import type { Account, AccountContext, Env } from "../types.ts";
+import { accountAction, publicAccount } from "./service.ts";
+import { SyncError } from "../sync/duolingo.ts";
+import { courseSettings } from "../courses/service.ts";
+async function accountDetails(user: Account | null, env: Env) {
   if (!user) return null;
   try {
     const state = await courseSettings(env, user);
@@ -10,8 +11,8 @@ async function accountDetails(user, env) {
     return { ...publicAccount(user), courses: [], courseRevision: -1, courseError: error instanceof SyncError ? error.message : "課程清單暫時無法讀取，請重新整理。" };
   }
 }
-export const accountJson = (value, status = 200) => Response.json(value, { status, headers: { "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" } });
-export async function accountRoutes(request, env, context) {
+export const accountJson = (value: unknown, status = 200) => Response.json(value, { status, headers: { "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" } });
+export async function accountRoutes(request: Request, env: Env, context: AccountContext) {
   const url = new URL(request.url);
   if (url.pathname === "/api/account/me" && request.method === "GET") return accountJson({ user: await accountDetails(context.user, env) });
   if (request.method !== "POST") throw new SyncError("找不到帳號操作。", 404);
@@ -28,10 +29,10 @@ export async function accountRoutes(request, env, context) {
     text += decoder.decode(value, { stream: true });
   }
   text += decoder.decode();
-  let body;
+  let body: unknown;
   try { body = JSON.parse(text); } catch { throw new SyncError("請求格式不正確。"); }
   if (!body || typeof body !== "object" || Array.isArray(body)) throw new SyncError("請求格式不正確。");
-  const result = await accountAction(url.pathname.slice("/api/account/".length), body, request, env, context);
+  const result = await accountAction(url.pathname.slice("/api/account/".length), body as Record<string, unknown>, request, env, context);
   const fresh = result.user ? await context.repo.byName(result.user.username) : null;
   const response = accountJson({ user: await accountDetails(fresh, env) });
   if (result.cookie) response.headers.set("Set-Cookie", result.cookie);

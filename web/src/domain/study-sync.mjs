@@ -1,6 +1,4 @@
 // Pure, versioned synchronization records. Field boundaries keep unrelated edits separate.
-import { validWeights } from "./fsrs-model.mjs";
-import { validCourseKey } from "./languages.mjs";
 const studyDefaults = {newLimit:10,reviewLimit:100,retention:0.9,templates:["recognition"],burySiblings:true};
 export const studyEqual = (a,b) => studyStable(a) === studyStable(b);
 function studyStable(value) {
@@ -59,33 +57,4 @@ export function mergeStudy(base,local,remote,choice=null) {
   return {cells,conflicts};
 }
 
-// Validate wire data before it can reach a user's stores. No client-supplied owner IDs.
-export function validateStudyCells(cells) {
-  const obj=v=>v && typeof v === "object" && !Array.isArray(v);
-  const finite=v=>Number.isFinite(v) && v>=0 && v<=8640000000000000;
-  const safe=s=>typeof s === "string" && s.length>0 && s.length<=2000 && !["__proto__","prototype","constructor"].includes(s);
-  const keys=(v,allowed)=>obj(v) && Object.keys(v).every(k=>allowed.includes(k));
-  if (!obj(cells) || Object.keys(cells).length>100000) throw Error("學習資料格式不正確。");
-  for (const [key,v] of Object.entries(cells)) {
-    let p; try { p=JSON.parse(key); } catch { throw Error("學習欄位格式不正確。"); }
-    if (!Array.isArray(p) || !p.every(safe) || JSON.stringify(p)!==key) throw Error("學習欄位格式不正確。");
-    const [kind,id,field]=p;
-    let valid=false;
-    if (kind==="romaji") valid=p.length===1 && typeof v==="boolean";
-    if (kind==="word") valid=p.length===3 && (field==="note" ? typeof v==="string" && v.length<=10000 : field==="updatedAt" ? finite(v) : field==="star" && typeof v==="boolean");
-    if (kind==="practice") valid=p.length===2 && keys(v,["reviews","stage","due","updatedAt"]) && Object.values(v).every(finite);
-    if (kind==="card") {
-      valid=p.length===2 && keys(v,["due","reviews","buriedUntil","updatedAt","suspended","legacy","memory"]) && Object.entries(v).every(([k,x])=>k==="memory" || (["suspended","legacy"].includes(k) ? typeof x==="boolean" : finite(x)));
-      if (v && Object.hasOwn(v,"memory")) {
-        const fields=["due","stability","difficulty","elapsed_days","scheduled_days","reps","lapses","state","learning_steps"];
-        valid=valid && keys(v.memory,[...fields,"last_review"]) && fields.every(k=>finite(v.memory[k])) && Object.values(v.memory).every(finite) && [0,1,2,3].includes(v.memory.state) && v.memory.difficulty<=10;
-      }
-    }
-    if (kind==="log") valid=p.length===2 && keys(v,["id","cardId","language","day","at","rating","wasNew","wasReview"]) && v.id===id && safe(v.cardId) && validCourseKey(v.language) && typeof v.day==="string" && v.day.length<=20 && finite(v.at) && [1,2,3,4].includes(v.rating) && typeof v.wasNew==="boolean" && typeof v.wasReview==="boolean";
-    if (kind==="setting") valid=p.length===3 && (field==="templates" ? Array.isArray(v) && v.length>0 && v.length<=3 && v.every(t=>["recognition","recall","listening"].includes(t)) : field==="burySiblings" ? typeof v==="boolean" : ["newLimit","reviewLimit","retention"].includes(field) && finite(v) && v<=(field==="newLimit" ? 100 : field==="reviewLimit" ? 1000 : 0.97) && (field!=="retention" || v>=0.8));
-    if (kind==="model") valid=p.length===2 && keys(v,["weights","modelTrainedAt"]) && validWeights(v.weights) && typeof v.modelTrainedAt==="string" && v.modelTrainedAt.length<=100;
-    if (["setting","model"].includes(kind)) valid=valid && validCourseKey(id);
-    if (!valid) throw Error("學習資料含有不支援或無效的欄位。");
-  }
-  return cells;
-}
+export { validateStudyCells } from "./study-validation.mjs";

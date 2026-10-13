@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import { orderDictionarySenses, matchedJapaneseLemmas, japaneseLookupForms, dictionaryGrammar } from "../web/src/domain/dictionary.mjs";
 import { createDictionaryClient } from "../web/src/services/dictionary-client.mjs";
 import { dictionaryView } from "../web/src/ui/views/dictionary.mjs";
-import { createDictionaryProxy } from "../server/dictionary/routes.mjs";
-import worker from "../server/worker.mjs";
+import { createDictionaryProxy } from "../server/dictionary/routes.ts";
+import worker from "../server/worker.ts";
 import { testDatabase } from "./helpers/database.mjs";
 
 test("German noun abbreviations are explained without rewriting adjective grammar",()=>{

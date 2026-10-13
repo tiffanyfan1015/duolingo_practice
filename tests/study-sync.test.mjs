@@ -5,9 +5,9 @@ import {createReviewStore} from "../web/src/services/review-store.mjs";
 import {createStudySync} from "../web/src/study-sync-controller.mjs";
 import {packStudy,unpackStudy,mergeStudy,validateStudyCells} from "../web/src/domain/study-sync.mjs";
 import {previewRatings} from "../web/src/services/fsrs-scheduler.mjs";
-import {studyRepository} from "../server/study/repository.mjs";
+import {studyRepository} from "../server/study/repository.ts";
 import {testDatabase} from "./helpers/database.mjs";
-import worker from "../server/worker.mjs";
+import worker from "../server/worker.ts";
 const memory=()=>{const m=new Map();return {getItem:k=>m.get(k)||null,setItem:(k,v)=>m.set(k,v)};};
 const k=(...parts)=>JSON.stringify(parts);
 function device(client,storage=memory()) {

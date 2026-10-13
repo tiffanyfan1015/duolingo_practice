@@ -1,12 +1,13 @@
-﻿import { SyncError } from "./duolingo.mjs";
+import type { SyncJob, SyncRepository, DuolingoClient, Catalog, CourseSelection } from "../types.ts";
+import { SyncError } from "./duolingo.ts";
 import {
   courseState,
   fingerprint,
   appendPage,
   emptyPage,
   transform,
-} from "./domain.mjs";
-export function publicJob(job) {
+} from "./domain.ts";
+export function publicJob(job: SyncJob | null) {
   if (!job) return null;
   return {
     id: job.id,
@@ -20,9 +21,9 @@ export function publicJob(job) {
     completedAt: job.completedAt || null,
   };
 }
-export function syncService(repo, client, baseCatalog = { courses: [] }, target = null) {
+export function syncService(repo: SyncRepository, client: DuolingoClient, baseCatalog: Catalog = { courses: [] }, target: CourseSelection | null = null) {
   return {
-    async start(language, restart = false) {
+    async start(language: string, restart = false) {
       const previous = await repo.get(language);
       if (
         previous &&
@@ -34,7 +35,7 @@ export function syncService(repo, client, baseCatalog = { courses: [] }, target 
       if (previous && Date.now() - previous.startedAt < 15000)
         throw new SyncError("請稍候 15 秒再重新開始同步。", 429);
       const snapshot = courseState(await client.profile(), target?.language || language, target);
-      const job = {
+      const job: SyncJob = {
         id: crypto.randomUUID(),
         language,
         learningLanguage: target?.language || language,
@@ -49,7 +50,7 @@ export function syncService(repo, client, baseCatalog = { courses: [] }, target 
       };
       return publicJob(await repo.start(job, previous));
     },
-    async step(language, id) {
+    async step(language: string, id: string) {
       const job = await repo.get(language);
       if (!job || job.id !== id)
         throw new SyncError("同步工作已更換，請重新按同步。", 409);

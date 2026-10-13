@@ -1,4 +1,4 @@
-﻿# GitHub → Cloudflare Workers 部署
+# GitHub → Cloudflare Workers 部署
 
 目前優先使用 Workers + Static Assets + D1。`wrangler.jsonc` 預設啟用多人模式，請先依 [多人部署與移轉指引](MULTI_USER.md) 設定 `CREDENTIAL_KEY`／`REGISTRATION_CODE`；以下 `owner`、`SITE_PASSWORD` 與 `DUOLINGO_JWT` 步驟只適用 `MULTI_USER="false"` 的單人模式。尚未因本次修改建立雲端資源或部署。
 
@@ -6,7 +6,8 @@
 2. 修改專案 `wrangler.jsonc`：將 `REPLACE_WITH_D1_DATABASE_ID` 換成真實 Database ID；若資料庫名称不同，一併改 `database_name`。Database ID 不是密碼，可隨設定提交；不要填帳號 ID。
 3. 將程式連同 `wrangler.jsonc` 推到自己的 GitHub 私人 repository，保留 `.gitignore`。
 4. Cloudflare 建立 Worker、連接該 GitHub repository，選正式分支。Worker 名稱應與設定的 `cijian-private` 相同（也可以兩邊一起改名）。
-   - Build command：`python3 scripts/cloud_build.py`
+   - Build command：`npm ci && npm run build:cloud`
+   - 建置環境使用 Node.js 24 以上，可設定 `NODE_VERSION=24`。
    - Deploy command：`npx wrangler@4 deploy`
    - Root directory：專案位於 repository 最外層時留空或用介面預設值。
    - 不用填写 Pages 的 output directory 欄位，資源目錄已由 `wrangler.jsonc` 指定為 `dist`。

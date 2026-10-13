@@ -1,13 +1,22 @@
 {
   "name": "cijian-practice",
   "private": true,
+  "type": "module",
   "scripts": {
     "preview": "node tests/helpers/account-server.mjs --preview",
     "test": "node --test tests/*.test.mjs",
     "vendor": "node scripts/vendor-fsrs.mjs",
-    "build:cloud": "python scripts/cloud_build.py"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.browser.json",
+    "test:build": "npm run build:cloud && node --test tests/build/*.test.mjs",
+    "build:cloud": "node scripts/cloud-build.mjs"
   },
+  "engines": { "node": ">=24.0.0" },
   "dependencies": {
     "ts-fsrs": "5.4.2"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20261013.1",
+    "esbuild": "0.28.2",
+    "typescript": "7.0.2"
   }
 }

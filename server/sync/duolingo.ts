@@ -1,10 +1,12 @@
+import type { DuolingoClient } from "../types.ts";
 export class SyncError extends Error {
-  constructor(message, status = 400) {
+  status: number;
+  constructor(message: string, status = 400) {
     super(message);
     this.status = status;
   }
 }
-export function userId(token) {
+export function userId(token: string | undefined) {
   if (!token)
     throw new SyncError(
       "尚未連接 Duolingo，請先設定登入憑證。",
@@ -31,9 +33,9 @@ export function userId(token) {
     throw new SyncError("Duolingo 登入憑證格式不正確。", 401);
   }
 }
-export function createDuolingoClient(token, fetcher = fetch) {
+export function createDuolingoClient(token: string | undefined, fetcher: typeof fetch = fetch): DuolingoClient {
   const id = userId(token);
-  async function request(path, body) {
+  async function request(path: string, body?: unknown): Promise<unknown> {
     let response;
     try {
       response = await fetcher("https://www.duolingo.com" + path, {
@@ -51,7 +53,7 @@ export function createDuolingoClient(token, fetcher = fetch) {
       throw new SyncError("Duolingo 連線逾時或無法連線，請稍後繼續同步。", 502);
     }
     if (!response.ok) {
-      const hints = {
+      const hints: Record<number, string> = {
         401: "Duolingo 登入失效，請重新連接 Duolingo。",
         403: "Duolingo 拒絕雲端存取；需重新登入或網站驗證。",
         429: "請求過於頻繁，請稍後再同步。",

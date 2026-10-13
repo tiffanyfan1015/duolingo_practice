@@ -1,15 +1,15 @@
-﻿import test from "node:test";
+import test from "node:test";
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
-import { repository } from "../server/sync/repository.mjs";
-import { syncService } from "../server/sync/service.mjs";
-import { appendPage, emptyPage, courseState } from "../server/sync/domain.mjs";
+import { repository } from "../server/sync/repository.ts";
+import { syncService } from "../server/sync/service.ts";
+import { appendPage, emptyPage, courseState } from "../server/sync/domain.ts";
 import {
   userId,
   createDuolingoClient,
   SyncError,
-} from "../server/sync/duolingo.mjs";
-import worker from "../server/worker.mjs";
+} from "../server/sync/duolingo.ts";
+import worker from "../server/worker.ts";
 
 function database() {
   const sql = new DatabaseSync(":memory:");

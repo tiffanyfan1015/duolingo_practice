@@ -1,18 +1,20 @@
-import { randomSecret, digestSecret, sameSecret, passwordHash, credentialKey, sealCredential, openCredential } from "./crypto.mjs";
-import { accountRepository } from "./repository.mjs";
-import { createDuolingoClient, userId, SyncError } from "../sync/duolingo.mjs";
-import { refreshCourseList, saveCourseSelection } from "../courses/service.mjs";
-import { discoverCourses } from "../courses/domain.mjs";
+import type { Account, AccountContext, Env } from "../types.ts";
+import { record } from "../types.ts";
+import { randomSecret, digestSecret, sameSecret, passwordHash, credentialKey, sealCredential, openCredential } from "./crypto.ts";
+import { accountRepository } from "./repository.ts";
+import { createDuolingoClient, userId, SyncError } from "../sync/duolingo.ts";
+import { refreshCourseList, saveCourseSelection } from "../courses/service.ts";
+import { discoverCourses } from "../courses/domain.ts";
 
-export const publicAccount = (user) => user ? ({ id: user.id, username: user.username, connected: !!user.credential, duolingoId: user.duolingo_id || null }) : null;
-export function accountCookie(token, maxAge = 604800) {
+export const publicAccount = (user: Account | null) => user ? ({ id: user.id, username: user.username, connected: !!user.credential, duolingoId: user.duolingo_id || null }) : null;
+export function accountCookie(token: string, maxAge = 604800) {
   return `__Host-cijian=${token}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${maxAge}`;
 }
-export function sessionToken(request) {
+export function sessionToken(request: Request) {
   const token = (request.headers.get("Cookie") || "").split(";").map((s) => s.trim()).find((s) => s.startsWith("__Host-cijian="))?.slice(14);
-  return /^[a-f0-9]{64}$/.test(token || "") ? token : "";
+  return /^[a-f0-9]{64}$/.test(token || "") ? token! : "";
 }
-export async function accountContext(request, env) {
+export async function accountContext(request: Request, env: Env): Promise<AccountContext> {
   if (!env.DB) throw new SyncError("多人模式尚未設定資料庫。", 503);
   try { await credentialKey(env.CREDENTIAL_KEY); }
   catch { throw new SyncError("多人模式尚未設定憑證加密金鑰。", 503); }
@@ -22,13 +24,13 @@ export async function accountContext(request, env) {
   const user = token ? await repo.session(await digestSecret(token), Date.now()) : null;
   return { repo, user, token };
 }
-export function requireAccount(request, context) {
+export function requireAccount(request: Request, context: AccountContext): asserts context is AccountContext & { user: Account } {
   if (!context.user) throw new SyncError("請先登入 Duolingo 單字庫。", 401);
   const expected = request.headers.get("X-Cijian-User");
   if (expected && expected !== context.user.id) throw new SyncError("登入帳號已變更，請重新整理頁面。", 409);
 }
-export async function accountAction(action, body, request, env, context) {
-  const { repo, user, token } = context;
+export async function accountAction(action: string, body: Record<string, unknown>, request: Request, env: Env, context: AccountContext) {
+  const { repo, token } = context;
   if (["login", "register"].includes(action)) {
     const ip = request.headers.get("CF-Connecting-IP") || "local";
     if (!await repo.throttle(await digestSecret(`auth:${ip}`), 30)) throw new SyncError("嘗試次數過多，請於 15 分鐘後再試。", 429);
@@ -55,6 +57,7 @@ export async function accountAction(action, body, request, env, context) {
     return { user: publicAccount(found), cookie: accountCookie(session) };
   }
   requireAccount(request, context);
+  const user = context.user;
   if (request.headers.get("X-Cijian-User") !== user.id) throw new SyncError("請重新整理帳號頁後再操作。", 409);
   if (action === "logout") {
     await repo.deleteSession(await digestSecret(token));
@@ -68,7 +71,7 @@ export async function accountAction(action, body, request, env, context) {
     if (user.duolingo_id && user.duolingo_id !== duoId) throw new SyncError("此本站帳號已綁定另一個 Duolingo 帳號；請為另一帳號建立新的本站帳號。", 409);
     const client = createDuolingoClient(credential);
     const [profile, listing] = await Promise.all([client.profile(), client.courses()]);
-    if (!profile?.currentCourse) throw new SyncError("無法確認 Duolingo 的目前課程，請先在 Duolingo 選擇課程。");
+    if (!record(profile).currentCourse) throw new SyncError("無法確認 Duolingo 的目前課程，請先在 Duolingo 選擇課程。");
     discoverCourses(listing, profile);
     const encrypted = await sealCredential(credential, env.CREDENTIAL_KEY, user.id);
     const result = await repo.connect(user, duoId, encrypted);
@@ -89,7 +92,7 @@ export async function accountAction(action, body, request, env, context) {
   }
   throw new SyncError("找不到帳號操作。", 404);
 }
-export async function accountCredential(user, env) {
+export async function accountCredential(user: Account, env: Env) {
   if (!user.credential) throw new SyncError("請到「帳號與 Duolingo」連接你的帳號。", 409);
   try { return await openCredential(user.credential, env.CREDENTIAL_KEY, user.id); }
   catch { throw new SyncError("無法讀取連線憑證，請到帳號頁重新連接 Duolingo。", 503); }

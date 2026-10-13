@@ -1,8 +1,8 @@
-﻿// HTTP Basic authentication keeps credentials off the downloadable website.
+// HTTP Basic authentication keeps credentials off the downloadable website.
 // Use a unique, randomly generated password of at least 20 characters.
 const encoder = new TextEncoder();
 
-async function equalCredentials(actual, expected) {
+async function equalCredentials(actual: string, expected: string) {
   const [left, right] = await Promise.all(
     [actual, expected].map((value) =>
       crypto.subtle.digest("SHA-256", encoder.encode(value)),
@@ -15,7 +15,7 @@ async function equalCredentials(actual, expected) {
   return difference === 0;
 }
 
-export async function authenticate(request, password) {
+export async function authenticate(request: Request, password: unknown) {
   if (typeof password !== "string" || password.length < 20)
     return "unconfigured";
   const header = request.headers.get("Authorization") || "";
@@ -24,7 +24,7 @@ export async function authenticate(request, password) {
     const bytes = Uint8Array.from(atob(header.slice(6).trim()), (char) =>
       char.charCodeAt(0),
     );
-    const credentials = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    const credentials = new TextDecoder("utf-8", { fatal: true, ignoreBOM: false }).decode(bytes);
     return (await equalCredentials(credentials, `owner:${password}`))
       ? "allowed"
       : "denied";

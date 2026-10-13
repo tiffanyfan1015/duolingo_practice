@@ -1,9 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import worker from "../server/worker.mjs";
+import worker from "../server/worker.ts";
 import { testDatabase } from "./helpers/database.mjs";
-import { digestSecret, openCredential } from "../server/accounts/crypto.mjs";
-import { userRepository } from "../server/sync/user-repository.mjs";
+import { digestSecret, openCredential } from "../server/accounts/crypto.ts";
+import { userRepository } from "../server/sync/user-repository.ts";
 import { accountStorage, createProgressStore, STORAGE_KEY } from "../web/src/services/progress-store.mjs";
 import { createReviewStore, REVIEW_KEY } from "../web/src/services/review-store.mjs";
 

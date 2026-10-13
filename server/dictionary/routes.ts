@@ -1,15 +1,15 @@
 // Fixed providers only. Browser credentials and Duolingo tokens never go upstream.
-export function createDictionaryProxy(fetcher = (...args) => fetch(...args)) {
-  const cache = new Map(), pending = new Map(), blockedUntil = new Map();
+export function createDictionaryProxy(fetcher: typeof fetch = (...args) => fetch(...args)) {
+  const cache = new Map<string, {body: string; size: number; expires: number}>(), pending = new Map<string, Promise<string>>(), blockedUntil = new Map<string, number>();
   let bytes = 0;
-  const reply = (body, status = 200) => new Response(body, { status, headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" } });
-  return async function dictionaryProxy(request) {
+  const reply = (body: string | undefined, status = 200) => new Response(body, { status, headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" } });
+  return async function dictionaryProxy(request: Request) {
     if (request.method !== "GET") return reply('{"error":"Method not allowed"}', 405);
     const query = new URL(request.url).searchParams, provider = query.get("provider"), term = query.get("term")?.trim();
-    if (!["wiki", "jisho"].includes(provider) || !term || term.length > 120 || /[\x00-\x1f\x7f]/.test(term)) return reply('{"error":"查詢格式不正確。"}', 400);
+    if (!["wiki", "jisho"].includes(provider || "") || !term || term.length > 120 || /[\x00-\x1f\x7f]/.test(term)) return reply('{"error":"查詢格式不正確。"}', 400);
     if (request.headers.get("Sec-Fetch-Site") === "cross-site") return reply('{"error":"請從單字庫查詢。"}', 403);
     const upstream = new URL(provider === "wiki" ? "https://zh.wiktionary.org/w/api.php" : "https://jisho.org/api/v1/search/words");
-    upstream.search = new URLSearchParams(provider === "wiki" ? { action: "parse", page: term, prop: "text|revid", format: "json", formatversion: "2", redirects: "1", uselang: "zh-tw" } : { keyword: term });
+    upstream.search = new URLSearchParams(provider === "wiki" ? { action: "parse", page: term, prop: "text|revid", format: "json", formatversion: "2", redirects: "1", uselang: "zh-tw" } : { keyword: term }).toString();
     const key = upstream.href, hit = cache.get(key);
     if (hit && hit.expires > Date.now()) return reply(hit.body);
     if (hit) { bytes -= hit.size; cache.delete(key); }
@@ -27,7 +27,7 @@ export function createDictionaryProxy(fetcher = (...args) => fetch(...args)) {
             throw Error("rate-limited");
           }
           if (!response.ok) throw Error("upstream");
-          const reader = response.body.getReader(), chunks = [];
+          const reader = response.body!.getReader(), chunks = [];
           let size = 0;
           try {
             while (true) {
@@ -45,7 +45,7 @@ export function createDictionaryProxy(fetcher = (...args) => fetch(...args)) {
           if (provider === "wiki" && !(data.error?.code === "missingtitle" || (data.parse && typeof data.parse.text === "string"))) throw Error("format");
           if (provider === "jisho" && (!Array.isArray(data.data) || data.meta?.status !== 200)) throw Error("format");
           while (cache.size && (cache.size >= 32 || bytes + size > 8_000_000)) {
-            const oldest = cache.keys().next().value; bytes -= cache.get(oldest).size; cache.delete(oldest);
+            const oldest = cache.keys().next().value!; bytes -= cache.get(oldest)!.size; cache.delete(oldest);
           }
           cache.set(key, { body, size, expires: Date.now() + 7 * 86400000 }); bytes += size;
           return body;
@@ -54,7 +54,7 @@ export function createDictionaryProxy(fetcher = (...args) => fetch(...args)) {
         task.finally(() => pending.delete(key)).catch(() => {});
       }
       return reply(await pending.get(key));
-    } catch (error) { return error.message === "rate-limited" ? limited() : reply('{"error":"字典暫時無法查詢，請稍後重試。"}', 502); }
+    } catch (error) { return error instanceof Error && error.message === "rate-limited" ? limited() : reply('{"error":"字典暫時無法查詢，請稍後重試。"}', 502); }
   };
 }
 export const dictionaryRoute = createDictionaryProxy();

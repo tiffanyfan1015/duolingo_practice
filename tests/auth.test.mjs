@@ -1,6 +1,6 @@
-﻿import test from "node:test";
+import test from "node:test";
 import assert from "node:assert/strict";
-import worker from "../server/worker.mjs";
+import worker from "../server/worker.ts";
 const password = "test-only-password-long-enough";
 const authorization = (value) => "Basic " + btoa(value);
 let reads = 0;

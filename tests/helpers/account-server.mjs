@@ -3,7 +3,7 @@ import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { resolve, extname, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import worker from "../../server/worker.mjs";
+import worker from "../../server/worker.ts";
 import { testDatabase } from "./database.mjs";
 const preview = process.argv.includes("--preview");
 const previewPort = 8766;
