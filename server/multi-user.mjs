@@ -2,6 +2,7 @@ import { accountContext, requireAccount } from "./accounts/service.mjs";
 import { accountRoutes, accountJson } from "./accounts/routes.mjs";
 import { api } from "./sync/routes.mjs";
 import { SyncError } from "./sync/duolingo.mjs";
+import { studyRoutes } from "./study/routes.mjs";
 const accountPublicAssets = new Set([
   "/account.html", "/account.js", "/styles/account.css", "/styles/playful.css",
   "/src/account-controller.mjs", "/src/services/account-client.mjs",
@@ -17,6 +18,7 @@ export async function multiUserFetch(request, env) {
     if (!accountPublicAssets.has(url.pathname) && url.pathname !== "/account") {
       if (!context.user && ["/", "/index.html"].includes(url.pathname) && request.method === "GET") return new Response(null, { status: 302, headers: { Location: "/account", "Cache-Control": "no-store" } });
       requireAccount(request, context);
+      if (url.pathname === "/api/study") return await studyRoutes(request,env,context.user);
       if (url.pathname === "/data.json") return accountJson({ error: "多人模式不提供共用私人字庫。" }, 404);
       if (url.pathname.startsWith("/api/")) return await api(request, env, context.user);
       if (!studyAsset(url.pathname)) return accountJson({ error: "找不到資源。" }, 404);

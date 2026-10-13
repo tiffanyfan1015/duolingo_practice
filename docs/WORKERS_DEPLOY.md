@@ -2,7 +2,7 @@
 
 目前優先使用 Workers + Static Assets + D1。`wrangler.jsonc` 預設啟用多人模式，請先依 [多人部署與移轉指引](MULTI_USER.md) 設定 `CREDENTIAL_KEY`／`REGISTRATION_CODE`；以下 `owner`、`SITE_PASSWORD` 與 `DUOLINGO_JWT` 步驟只適用 `MULTI_USER="false"` 的單人模式。尚未因本次修改建立雲端資源或部署。
 
-1. Cloudflare 建立 D1 資料庫，名稱可用 `cijian-db`。複製 Database ID。
+1. Cloudflare 建立 D1 資料庫，名稱使用 `duolingo-vocab-db`。複製 Database ID。
 2. 修改專案 `wrangler.jsonc`：將 `REPLACE_WITH_D1_DATABASE_ID` 換成真實 Database ID；若資料庫名称不同，一併改 `database_name`。Database ID 不是密碼，可隨設定提交；不要填帳號 ID。
 3. 將程式連同 `wrangler.jsonc` 推到自己的 GitHub 私人 repository，保留 `.gitignore`。
 4. Cloudflare 建立 Worker、連接該 GitHub repository，選正式分支。Worker 名稱應與設定的 `cijian-private` 相同（也可以兩邊一起改名）。
@@ -21,7 +21,7 @@
 
 驗證：未登入時網站與 `/api/catalog` 應要求登入；登入後能載入網站。完成一次德文／日文同步，關閉電腦後再用手機重新開啟。Duolingo 是否接受 Cloudflare IP 仍需真實部署驗證，403 不是程式測試可以排除的限制。
 
-FSRS 個人參數與複習紀錄仍在瀏覽器，需要從舊網址備份再匯入新網址。補充資料候選報告尚未整合進網站。
+多人版的 FSRS 個人參數與複習紀錄已支援同帳號跨裝置同步；需要從舊本機網址備份再匯入正式網址一次。部署後請在兩台裝置登入同一帳號，確認筆記、收藏與一次複習可同步。`/api/study` 會自動建立所需 D1 表，不需要新 Secret 或付費訓練服務。正式單字詳情亦已整合按需字典 API。
 
 官方文件：
 - https://developers.cloudflare.com/workers/static-assets/binding/

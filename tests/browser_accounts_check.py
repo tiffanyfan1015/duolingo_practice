@@ -65,7 +65,10 @@ try:
         page.screenshot(path=str(ROOT / 'artifacts/account-mobile.png'), full_page=True)
         sync('101')
         page.locator('[data-star]').first.click()
-        alice_records = page.evaluate('() => JSON.stringify({...localStorage})')
+        page.locator('[data-study-state="synced"]').wait_for()
+        def study_records():
+            return page.evaluate('() => JSON.stringify(Object.fromEntries(Object.entries(localStorage).filter(([k])=>k.endsWith("cijian-progress-v1") || k.endsWith("cijian-review-v1"))))')
+        alice_records = study_records()
         assert 'cijian-user:' in alice_records
         assert 'jwt_token' not in alice_records and '.synthetic' not in alice_records
         page.locator('#account-link').click()
@@ -98,7 +101,7 @@ try:
         page.locator('.primary-link').click()
         page.wait_for_selector('[data-star]')
         assert 'Haus-101' in page.locator('#content').inner_text()
-        assert page.evaluate('() => JSON.stringify({...localStorage})') == alice_records
+        assert study_records() == alice_records
         page.locator('#account-link').click()
         page.locator('form[data-account="logout"] button').click()
         page.wait_for_selector('form[data-account="register"]')
@@ -106,7 +109,7 @@ try:
         connect('202')
         sync('202')
         assert 'Haus-101' not in page.locator('#content').inner_text()
-        assert page.evaluate('() => JSON.stringify({...localStorage})') == alice_records
+        assert study_records() == alice_records
         page.locator('[data-star]').first.click()
         assert page.evaluate('() => Object.keys(localStorage).filter(k=>k.endsWith("cijian-progress-v1")).length') == 2
         page.locator('#account-link').click()

@@ -20,3 +20,4 @@
   flex-wrap: wrap;
   gap: 12px;
 }
+.study-sync-status{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;margin:12px 0;border:1px solid #dfebd6;border-radius:14px;background:#f7fbf4;font-size:13px;color:#4b6c38}.study-sync-status>span{font-weight:700}.study-sync-status>p,.study-sync-status>details{flex-basis:100%;margin:0}.study-sync-status button{font-size:12px;padding:7px 12px}.study-sync-status[data-study-state="error"],.study-sync-status[data-study-state="conflict"],.study-sync-status[data-study-state="auth"]{background:#fff7e7;border-color:#ecd39d;color:#78561c}.study-conflict{padding:10px 0;border-bottom:1px solid #ecd39d;overflow-wrap:anywhere}.study-conflict p{max-height:160px;overflow:auto;white-space:pre-wrap}

@@ -1,5 +1,6 @@
 import { gradeWord } from "../domain/learning.mjs";
 export { createValidationStore } from "./validation-store.mjs";
+export { createStudyStore } from "./study-store.mjs";
 
 export const STORAGE_KEY = "cijian-progress-v1";
 
@@ -27,6 +28,7 @@ function cleanRecord(record) {
 }
 
 export function createProgressStore(storage, notify = () => {}) {
+  const listeners = new Set();
   let data = { words: {}, settings: { romaji: false } };
   try {
     const saved = JSON.parse(storage.getItem(STORAGE_KEY));
@@ -47,12 +49,13 @@ export function createProgressStore(storage, notify = () => {}) {
     /* An empty or damaged local file starts a fresh session. */
   }
 
-  function persist() {
+  function persist(emit = true) {
     try {
       storage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch {
       notify("瀏覽器無法儲存，請使用備份功能保留紀錄。");
     }
+    if (emit) for (const listener of listeners) listener();
   }
 
   function update(id, changes) {
@@ -61,6 +64,11 @@ export function createProgressStore(storage, notify = () => {}) {
   }
 
   return {
+    subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); },
+    replaceSynced(snapshot) {
+      data = {words:Object.fromEntries(Object.entries(snapshot.words).map(([id,r])=>[id,cleanRecord(r)])),settings:{romaji:snapshot.settings.romaji===true}};
+      persist(false);
+    },
     get records() {
       return data.words;
     },

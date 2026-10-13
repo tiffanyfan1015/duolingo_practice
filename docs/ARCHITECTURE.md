@@ -105,3 +105,11 @@ python tests/browser_check.py
 - `server/dictionary/routes.mjs` 提供固定上游、限量、限時、限流暫停與有界記憶體快取；必須先通過既有 Worker 登入驗證。本機 `vocab_sync/dictionary_http.py` 沿用 Python API transport 與七天快取，`serve_web.py` 僅組裝 handler。
 - 字典內容不覆寫 Duolingo 字庫，也不寫入學習紀錄或備份；筆記仍經 progress-store 保存。正式頁不需要人工審核，獨立驗證工具仍保留供查詢品質檢查。
 - 驗證：`tests/dictionary.test.mjs`、`tests/test_dictionary_http.py`、`tests/browser_dictionary_check.py`（合成 API 回應、獨立瀏覽器）。
+
+## 跨裝置學習紀錄
+
+- `domain/study-sync.mjs` 純函式將學習資料拆為欄位、比較雲端基準／本機／遠端三個版本並驗證格式。筆記與收藏分開合併；FSRS 卡片狀態與模型保持完整。
+- `services/study-store.mjs` 經 progress-store 匯出，負責帳號隔離的基準與待送日誌；progress/review store 的訂閱與同步替換維持原 key／備份相容。先持久保存同步日誌，再更新原 store，重啟時可修復中途停止的套用。
+- `study-sync-controller` 組織 GET／版本条件 PUT 與衝突選擇，經 app-controller 接入；`services/study-client` 處理 HTTP，`ui/study-sync-events` 綁定事件，`ui/views/study-sync` 只產生 HTML。背景更新保留筆記草稿並使舊 FSRS 評分預覽失效。
+- `server/study/repository` 用 D1 分塊保存、單次查詢讀取一致快照、atomic batch 條件更新；`routes` 只使用已驗證帳號，不接受指定他人 user ID。未修改舊字庫表或 ID，沒有雲端訓練。
+- 驗證：`tests/study-sync.test.mjs`、`tests/browser_study_sync_check.py`。

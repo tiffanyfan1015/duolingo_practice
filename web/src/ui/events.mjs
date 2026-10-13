@@ -2,6 +2,9 @@ import { $, $$ } from "./dom.mjs";
 
 // Bind once. Rendering replaces content, not event handlers.
 export function bindEvents(actions) {
+  const markDraft=event=>{const form=event.target.closest(".review-settings");if(form)form.dataset.dirty="true";};
+  document.addEventListener("input",markDraft);
+  document.addEventListener("change",markDraft);
   document.addEventListener("change", async (event) => {
     if (!event.target.matches("[data-model-import]")) return;
     try {
@@ -45,6 +48,7 @@ export function bindEvents(actions) {
   document.addEventListener("submit", (event) => {
     if (event.target.matches(".review-settings")) {
       event.preventDefault();
+      delete event.target.dataset.dirty;
       const data = new FormData(event.target);
       actions.reviewSettings({
         newLimit: Number(data.get("newLimit")),

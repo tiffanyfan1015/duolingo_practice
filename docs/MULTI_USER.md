@@ -17,6 +17,25 @@
 
 建置 `python scripts/cloud_build.py`，沿用 `npx wrangler@4 deploy`。所有用戶須使用 HTTPS 網址。未配置 DB 或有效加密金鑰時，多人模式拒絕提供服務。請勿隨意更換 `CREDENTIAL_KEY`；若金鑰遺失或更換，現有用戶需重新提交 Duolingo 憑證。帳號頁 `/account` 沿用 Workers Assets 預設的 [HTML 路由規則](https://developers.cloudflare.com/workers/static-assets/routing/advanced/html-handling/)，不需額外重導向設定。
 
+### 本機 Secret 檔案與正式上傳
+
+根目錄 `.env.example` 是可提交的空白範本；複製成 `.env` 後填入上述兩個 Secret。`.gitignore` 已排除 `.env`、其他 `.env.*` 與 `.dev.vars*`，只有 `.env.example` 例外。不要將真實值填入範本。
+
+Wrangler 本機開發支援 `.env`；若同時存在 `.dev.vars`，會優先使用 `.dev.vars` 而忽略 `.env`，請只選一種。`python serve_web.py` 與 `npm run preview` 並非正式 Worker 執行環境，不會因此載入正式帳號 Secret。
+
+本機 `.env` 不會透過 GitHub 自動上傳。完成 Worker 建立、確認 `wrangler.jsonc` 指向正確 Worker 後，可以在自己的終端執行：
+
+```powershell
+npx wrangler@4 login
+npx wrangler@4 secret bulk .env
+```
+
+第二個指令會上傳檔案內的 Secret 並部署生效；只在兩個值都已填妥時執行。後續一般 GitHub 部署不需重傳未變更的 Secret。也可沿用 Cloudflare 控制台逐一設定。`.env` 在本機仍是明文檔，Git 忽略不等於加密。
+
+資料庫名稱使用 `duolingo-vocab-db`，`db` 代表 database。建立 D1 後將真正的 Database ID 填入 `wrangler.jsonc` 的 `database_id`；程式使用的 binding 名稱 `DB` 維持不變。修改本機設定不會建立或重新命名既有雲端資料庫。
+
+官方說明：https://developers.cloudflare.com/workers/configuration/secrets/
+
 多人模式不讀取全站 `DUOLINGO_JWT` 與 `SITE_PASSWORD`，也不提供共用的 `data.json`。新用戶初始字庫為空。進入 `/account` 建立Duolingo 單字庫帳號，按照頁面說明取得自己 Duolingo 的 `jwt_token`，連接成功後進入練習室同步。不是 Duolingo 官方 OAuth，需手動取得與更新憑證；不需要提供 Duolingo 密碼。
 
 ## 隔離與登入
@@ -40,6 +59,14 @@
 
 ## 目前範圍與驗證
 
-複習、收藏、筆記和 FSRS 個人參數仍在各自瀏覽器，跨裝置用備份／匯入。此版尚未包含忘記密碼、帳號刪除與管理介面，也未加入背景自動同步；同步時保持頁面開啟。實際 Duolingo 接受雲端請求與否需要部署後驗證。
+同帳號的複習、收藏、筆記、羅馬拼音設定、每日份量與 FSRS 個人參數已支援跨裝置同步。登入練習室、切回頁面、恢復連線及修改後會自動同步；頁面顯示時另每 30 秒檢查更新。切換裝置或清除瀏覽器資料前，請確認「學習紀錄已同步」。字庫的 Duolingo 同步仍需手動啟動，並保持頁面開啟。
+
+不同欄位的修改自動合併；同一筆記、設定或卡片狀態發生衝突時，顯示兩個版本，選擇保留此裝置或雲端的衝突內容，其餘變更照常合併。同時在兩台裝置複習同一張卡時，保留不同 ID 的評分歷史，但卡片排程需選擇一個版本，不宣稱可重播合成兩條排程。撤銷評分可同步刪除相應紀錄。背景同步不清空未儲存的筆記；其他裝置更新每日複習後，回到概況重新開始，避免使用舊的評分預覽。
+
+離線時可在已開啟的頁面繼續操作，變更留在本機，恢復連線後補送；未實作離線安裝／首次載入。同步日誌保存在帳號專屬 `cijian-study-sync-v1`，包含雲端基準與待送資料，重新開啟後可繼續。瀏覽器空間不足或登入失效時明確提示，不顯示已同步。原學習 key、單字 ID、備份格式保持相容。從舊本地網址搬到正式網站仍需先匯出再匯入一次；正式網址各裝置用同一帳號即可同步。
+
+後端 `/api/study` 使用既有登入與 D1，按使用者 ID 隔離，以版本條件寫入避免覆蓋；資料分塊儲存，初始化時自動建立 `user_study_state`、`user_study_chunks`。沒有新增 Containers、付費計畫或雲端訓練；仍受既有 Workers／D1 額度限制。單次同步上限 8 MB、100,000 個欄位；超過時保留本機資料並提示備份。尚未包含忘記密碼、帳號刪除與管理介面。實際 Duolingo 接受雲端請求與否需要部署後驗證。
+
+新增同步驗證：`node --test tests/study-sync.test.mjs`、`python tests/browser_study_sync_check.py`。後者使用兩個獨立瀏覽器環境、真實 Worker 路由與測試 SQLite，不使用個人憑證。
 
 執行 `node --test tests/*.test.mjs`、`python -m unittest discover -s tests -v`、`python scripts/cloud_build.py`、`node --check dist/_worker.js`。`tests/accounts.test.mjs` 使用合成憑證和 SQLite 驗證兩用戶端到端同步、會話撤銷、資料隔離、過期／跨站拒絕、加密儲存與舊備份相容。`python tests/browser_accounts_check.py` 會自行啟動隔離的 Worker 測試伺服器，以合成資料實測兩用戶的手機／桌面操作；需要 `.deps` 的 Playwright 與本機 Chrome。

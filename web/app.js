@@ -11,6 +11,7 @@ try {
   const storage = accountStorage(localStorage, catalog.user?.id);
   mountApplication({
     catalog,
+    storage,
     progress: createProgressStore(storage, toast),
     review: createReviewStore(storage, toast),
     audio: createAudioPlayer(toast),

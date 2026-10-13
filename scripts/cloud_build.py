@@ -25,7 +25,7 @@ def build(output=None, include_personal=False):
         shutil.copyfile(source, target)
     (output / '.assetsignore').write_text('_worker.js\n_routes.json\n', encoding='utf-8')
     chunks = []
-    for name in ['dictionary/routes.mjs', *MODULES]:
+    for name in ['../web/src/domain/fsrs-model.mjs', '../web/src/domain/study-sync.mjs', 'study/repository.mjs', 'study/routes.mjs', 'dictionary/routes.mjs', *MODULES]:
         source = (ROOT / 'server' / name).read_text(encoding='utf-8-sig')
         source = re.sub(r'(?m)^import\s+\{[^}]+\}\s+from\s+[\'\"][^\'\"]+[\'\"];\s*', '', source)
         if re.search(r'^import ', source, re.MULTILINE): raise ValueError('Unsupported import in worker build')

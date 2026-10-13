@@ -7,6 +7,7 @@ const clone = (value) => JSON.parse(JSON.stringify(value));
 export const REVIEW_KEY = "cijian-review-v1";
 
 export function createReviewStore(storage, notify = () => {}) {
+  const listeners = new Set();
   let data = { version: 1, cards: {}, logs: [], settings: {} };
   let undo = null;
   try {
@@ -16,18 +17,25 @@ export function createReviewStore(storage, notify = () => {}) {
     notify("每日複習資料無法讀取，請從備份還原。");
   }
 
-  function persist() {
+  function persist(emit = true) {
     try {
       storage.setItem(REVIEW_KEY, JSON.stringify(data));
     } catch {
       notify("每日複習紀錄無法儲存，請立即備份。");
     }
+    if (emit) for (const listener of listeners) listener();
   }
   function checkpoint(cardId) {
     undo = { data: clone(data), cardId };
   }
 
   return {
+    subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); },
+    replaceSynced(snapshot) {
+      data = cleanReviewData(snapshot);
+      undo = null;
+      persist(false);
+    },
     get records() {
       return data.cards;
     },
@@ -64,7 +72,7 @@ export function createReviewStore(storage, notify = () => {}) {
         updatedAt: now,
       };
       data.logs.push({
-        id: `${now}-${card.id}-${data.logs.length}`,
+        id: `${now}-${crypto.randomUUID()}`,
         cardId: card.id,
         language: card.language,
         at: now,

@@ -24,6 +24,18 @@ python scripts/optimize_fsrs.py data/study-backup.json --language ja
 
 新參數從下一次評分開始使用；不清除收藏、筆記、歷史，也不立即改寫現有到期時間。既有卡片的記憶狀態會隨後續評分逐漸更新，沒有重播全歷史或批次重排。
 
+### 替其他用戶在本機訓練
+
+用戶可自行匯出本站的完整複習備份，交給你在電腦上訓練；不需要對方的登入密碼或 Duolingo 憑證。每位用戶分開使用自己的備份及輸出檔，例如：
+
+```powershell
+python scripts/optimize_fsrs.py data/alice-backup.json --language de --output artifacts/alice-fsrs-de.json
+```
+
+將 `accepted: true` 的參數檔交回本人，在相同課程匯入。資料不足或驗證沒有改善時維持原模型。不要混合不同人的備份；目前參數檔核對語言與驗證結果，沒有綁定帳號，需自行確認檔案歸屬。CLI 目前僅接受 `de`／`ja` 課程 key，不支援其他動態課程 key。
+
+雲端自動訓練尚未實作。目前多人帳號已同步複習紀錄與個人參數，未來仍需新增背景訓練工作、驗證及模型發布流程。現有訓練器依賴 Python、原生 Rust 套件與 Node 子程序，不能直接當作目前 JavaScript Worker 的請求處理函式使用。
+
 ### 訓練的限制與驗證
 
 - 只使用這個網站的「每日複習」紀錄，德、日分開。舊簡單練習不偽造為 FSRS 紀錄。
@@ -32,7 +44,7 @@ python scripts/optimize_fsrs.py data/study-backup.json --language ja
 - 本站採保守門檻：至少 20 張卡、訓練 100 筆及驗證 20 筆跨 UTC 日期的複習，兩組都要有成功與忘記。這是本站門檻，並非 Anki 規定；只累積當天短間隔評分不夠。
 - 短間隔紀錄保留在歷史裡，日期差採目前排程器的 UTC 日期規則。驗證使用實際的 JS 排程器重播，與目前參數比較，並未用同一批資料同時訓練和評分。
 - 驗證改善不是未來記憶率的保證。每次拿新的真實紀錄重新訓練；不要把測試用合成紀錄匯入你的帳號。
-- 目前學習紀錄與個人參數存在該瀏覽器的 localStorage；換裝置／網址需要完整備份還原，尚非雲端同步學習進度。
+- 多人帳號的學習紀錄與個人參數會同步到 D1；localStorage 保留本機副本與待同步變更。相同正式網址、相同帳號可跨裝置使用；舊本機網址的紀錄需先備份後匯入一次。
 
 官方來源：https://github.com/open-spaced-repetition/fsrs-rs-python
 

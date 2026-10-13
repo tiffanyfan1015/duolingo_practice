@@ -1,4 +1,6 @@
 import { mountSync } from "./sync-controller.mjs";
+import { mountStudySync } from "./study-sync-controller.mjs";
+import { createStudyStore } from "./services/progress-store.mjs";
 import { createDictionaryClient } from "./services/dictionary-client.mjs";
 import { dictionaryView } from "./ui/views/dictionary.mjs";
 import { loadCatalog } from "./services/catalog.mjs";
@@ -27,7 +29,15 @@ import {
   importCollection,
 } from "./services/collection-backup.mjs";
 
-export function mountApplication({ catalog, progress, review, audio, notify }) {
+export function mountApplication({ catalog, progress, review, audio, notify, storage }) {
+  let study=null;
+  if (catalog.user && storage) {
+    try {study=createStudyStore(storage,progress,review);}
+    catch(error) {notify(error.message);}
+    const hint=document.querySelector(".storage-note");
+    if(hint)hint.textContent="同帳號可同步學習紀錄；切換裝置前請確認已同步。";
+    if(!study)document.querySelector("#study-sync-area").textContent="學習同步未啟動，請先備份紀錄並檢查瀏覽器儲存空間。";
+  }
   const dictionary = createDictionaryClient({userId:catalog.user?.id});
   let detailRequest = 0;
   const accountLink = document.querySelector("#account-link");
@@ -36,6 +46,7 @@ export function mountApplication({ catalog, progress, review, audio, notify }) {
   if (!catalog.courses.length) {
     showNoCourses();
     bindEmptyEvents({ backup: () => downloadBackup(exportCollection(progress, review)), about: () => showDialog(aboutView()) });
+    if(study)mountStudySync({store:study,userId:catalog.user.id,onRemote:()=>{}});
     return;
   }
   const state = {
@@ -242,4 +253,18 @@ export function mountApplication({ catalog, progress, review, audio, notify }) {
   renderCourse(course(), progress.romaji);
   render();
   sync.refresh();
+  if(study)mountStudySync({store:study,userId:catalog.user.id,onRemote:()=>{
+    // The detail dialog (including an unsaved note) is never replaced by a background sync.
+    const settingsForm=document.querySelector(".review-settings");
+    const draft=settingsForm?.dataset.dirty ? [...settingsForm.elements].filter(el=>el.name).map(el=>({name:el.name,value:el.value,checked:el.checked})) : [];
+    daily.invalidate();
+    render();
+    document.querySelector("#romaji").checked=progress.romaji;
+    for(const value of draft) {
+      const el=[...(document.querySelector(".review-settings")?.elements || [])].find(el=>el.name===value.name && (el.type!=="checkbox" || el.value===value.value));
+      if(el){if(el.type==="checkbox")el.checked=value.checked;else el.value=value.value;}
+    }
+    if(draft.length && document.querySelector(".review-settings"))document.querySelector(".review-settings").dataset.dirty="true";
+    if(state.mode==="review")notify("已更新其他裝置的紀錄，可開始下一輪複習。");
+  }});
 }
