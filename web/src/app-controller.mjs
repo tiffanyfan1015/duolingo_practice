@@ -2,6 +2,8 @@ import { mountSync } from "./sync-controller.mjs";
 import { mountStudySync } from "./study-sync-controller.mjs";
 import { createStudyStore } from "./services/progress-store.mjs";
 import { createDictionaryClient } from "./services/dictionary-client.mjs";
+import { createDictionaryController } from "./dictionary-controller.mjs";
+import { configureAccountUI, getSyncArea, reloadApplication, refreshStudyWorkspace } from "./ui/application-shell.mjs";
 import { dictionaryView } from "./ui/views/dictionary.mjs";
 import { loadCatalog } from "./services/catalog.mjs";
 import {
@@ -30,18 +32,16 @@ import {
 } from "./services/collection-backup.mjs";
 
 export function mountApplication({ catalog, progress, review, audio, notify, storage }) {
-  let study=null;
+  let study = null;
   if (catalog.user && storage) {
-    try {study=createStudyStore(storage,progress,review);}
-    catch(error) {notify(error.message);}
-    const hint=document.querySelector(".storage-note");
-    if(hint)hint.textContent="同帳號可同步學習紀錄；切換裝置前請確認已同步。";
-    if(!study)document.querySelector("#study-sync-area").textContent="學習同步未啟動，請先備份紀錄並檢查瀏覽器儲存空間。";
+    try { study = createStudyStore(storage, progress, review); }
+    catch (error) { notify(error.message); }
   }
-  const dictionary = createDictionaryClient({userId:catalog.user?.id});
-  let detailRequest = 0;
-  const accountLink = document.querySelector("#account-link");
-  if (accountLink) accountLink.hidden = !catalog.user;
+  configureAccountUI(!!catalog.user, catalog.user && storage ? !!study : null);
+  const dictionary = createDictionaryController(
+    createDictionaryClient({userId: catalog.user?.id}),
+    (selected, result) => updateDictionaryDetail(selected.id, dictionaryView(result, selected)),
+  );
   renderCourseSwitch(catalog.courses);
   if (!catalog.courses.length) {
     showNoCourses();
@@ -72,7 +72,7 @@ export function mountApplication({ catalog, progress, review, audio, notify, sto
   });
 
   const sync = mountSync({
-    element: document.querySelector("#sync-area"),
+    element: getSyncArea(),
     language: () => state.language,
     courseName: () => course().name,
     userId: catalog.user?.id,
@@ -80,7 +80,7 @@ export function mountApplication({ catalog, progress, review, audio, notify, sto
       const updated = await loadCatalog(fetch, catalog.user?.id);
       catalog.courses = updated.courses;
       if (!catalog.courses.some((c) => c.id === state.language)) {
-        location.reload();
+        reloadApplication();
         return;
       }
       renderCourseSwitch(catalog.courses);
@@ -117,17 +117,6 @@ export function mountApplication({ catalog, progress, review, audio, notify, sto
     daily.reset();
     state.page = 0;
     render();
-  }
-
-  async function loadDictionary(selected, language) {
-    const version = ++detailRequest;
-    updateDictionaryDetail(selected.id,dictionaryView({status:"loading"},selected));
-    try {
-      const result = await dictionary.lookup(selected.text,language);
-      if (version === detailRequest) updateDictionaryDetail(selected.id,dictionaryView(result,selected));
-    } catch (error) {
-      if (version === detailRequest) updateDictionaryDetail(selected.id,dictionaryView({status:"error",message:error.message},selected));
-    }
   }
 
   bindEvents({
@@ -218,17 +207,23 @@ export function mountApplication({ catalog, progress, review, audio, notify, sto
           course: course(),
         }),
       );
-      loadDictionary(word(id),course().language || state.language);
+      dictionary.load(word(id), course().language || state.language);
     },
     retryDictionary() {
       const selected = word(state.detailId);
-      if (selected) loadDictionary(selected,course().language || state.language);
+      if (selected) dictionary.load(selected, course().language || state.language);
+    },
+    closeDetail() {
+      state.detailId = null;
+      dictionary.invalidate();
     },
     saveNote(note) {
       progress.setNote(state.detailId, note);
       notify("筆記已儲存");
     },
     about() {
+      dictionary.invalidate();
+      state.detailId = null;
       showDialog(aboutView());
     },
     backup() {
@@ -253,18 +248,13 @@ export function mountApplication({ catalog, progress, review, audio, notify, sto
   renderCourse(course(), progress.romaji);
   render();
   sync.refresh();
-  if(study)mountStudySync({store:study,userId:catalog.user.id,onRemote:()=>{
-    // The detail dialog (including an unsaved note) is never replaced by a background sync.
-    const settingsForm=document.querySelector(".review-settings");
-    const draft=settingsForm?.dataset.dirty ? [...settingsForm.elements].filter(el=>el.name).map(el=>({name:el.name,value:el.value,checked:el.checked})) : [];
-    daily.invalidate();
-    render();
-    document.querySelector("#romaji").checked=progress.romaji;
-    for(const value of draft) {
-      const el=[...(document.querySelector(".review-settings")?.elements || [])].find(el=>el.name===value.name && (el.type!=="checkbox" || el.value===value.value));
-      if(el){if(el.type==="checkbox")el.checked=value.checked;else el.value=value.value;}
-    }
-    if(draft.length && document.querySelector(".review-settings"))document.querySelector(".review-settings").dataset.dirty="true";
-    if(state.mode==="review")notify("已更新其他裝置的紀錄，可開始下一輪複習。");
-  }});
+  if (study) mountStudySync({
+    store: study,
+    userId: catalog.user.id,
+    onRemote() {
+      daily.invalidate();
+      refreshStudyWorkspace(render, progress.romaji);
+      if (state.mode === "review") notify("已更新其他裝置的紀錄，可開始下一輪複習。");
+    },
+  });
 }

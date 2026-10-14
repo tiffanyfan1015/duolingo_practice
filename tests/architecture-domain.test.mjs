@@ -6,6 +6,8 @@ import {
   advanceSession,
 } from "../web/src/domain/session.mjs";
 import { filterWords } from "../web/src/domain/vocabulary.mjs";
+import { cleanSettings } from "../web/src/domain/review-state.mjs";
+import { packStudy, unpackStudy } from "../web/src/domain/study-sync.mjs";
 import {
   createProgressStore,
   STORAGE_KEY,
@@ -19,6 +21,14 @@ const word = {
   romaji: "neko",
   units: ["s1u1", "s1u2"],
 };
+test("default review settings stay omitted on the wire and are restored independently", () => {
+  const settings = cleanSettings();
+  const cells = packStudy({words:{},settings:{}}, {cards:{},logs:[],settings:{de:settings}});
+  assert.deepEqual(cells, {});
+  assert.deepEqual(cleanSettings(unpackStudy(cells).review.settings.de), settings);
+  settings.templates.push('listening');
+  assert.deepEqual(cleanSettings().templates, ['recognition']);
+});
 function storage(initial = null) {
   let text = initial;
   return {

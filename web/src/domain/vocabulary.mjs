@@ -1,5 +1,11 @@
+// @ts-check
 import { normalizeAnswer, dueNow } from "./learning.mjs";
 
+/**
+ * @param {import('../../../shared/vocabulary.ts').VocabularyWord[]} words
+ * @param {Record<string, import('../../../shared/practice.ts').WordProgress>} records
+ * @param {import('../../../shared/practice.ts').VocabularyFilter} filters
+ */
 export function filterWords(
   words,
   records,

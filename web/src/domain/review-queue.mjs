@@ -1,12 +1,6 @@
 import { cardPhase, effectiveRecord } from "./cards.mjs";
 
-export const DEFAULT_REVIEW_SETTINGS = {
-  newLimit: 10,
-  reviewLimit: 100,
-  retention: 0.9,
-  templates: ["recognition"],
-  burySiblings: true,
-};
+export { DEFAULT_REVIEW_SETTINGS } from "./review-settings.mjs";
 
 export function localDay(now) {
   const date = new Date(now);

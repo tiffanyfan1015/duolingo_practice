@@ -1,5 +1,8 @@
+// @ts-check
 import { normalizeAnswer } from "./learning.mjs";
+/** @typedef {import('../../../shared/practice.ts').PracticeSession} PracticeSession */
 
+/** @param {import('../../../shared/vocabulary.ts').VocabularyWord[]} words @param {number} limit @returns {PracticeSession} */
 export function createSession(words, limit, random = Math.random) {
   const shuffled = [...words];
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -14,6 +17,7 @@ export function createSession(words, limit, random = Math.random) {
   };
 }
 
+/** @param {PracticeSession} session @returns {PracticeSession} */
 export function revealAnswer(session, answer = "", language = "") {
   const word = session.words[session.index];
   if (!word) return session;
@@ -33,6 +37,7 @@ export function revealAnswer(session, answer = "", language = "") {
   };
 }
 
+/** @param {PracticeSession} session @param {boolean} good @returns {PracticeSession} */
 export function advanceSession(session, good) {
   if (!session.revealed || session.index >= session.words.length)
     return session;

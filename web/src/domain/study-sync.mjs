@@ -1,5 +1,5 @@
 // Pure, versioned synchronization records. Field boundaries keep unrelated edits separate.
-const studyDefaults = {newLimit:10,reviewLimit:100,retention:0.9,templates:["recognition"],burySiblings:true};
+import { DEFAULT_REVIEW_SETTINGS } from "./review-settings.mjs";
 export const studyEqual = (a,b) => studyStable(a) === studyStable(b);
 function studyStable(value) {
   if (value === undefined) return "undefined";
@@ -21,7 +21,7 @@ export function packStudy(progress, review) {
   for (const [language,settings] of Object.entries(review.settings)) {
     for (const [key,value] of Object.entries(settings)) {
       if (["weights","modelTrainedAt"].includes(key)) continue;
-      if (!studyEqual(value,studyDefaults[key])) put(["setting",language,key],value);
+      if (!studyEqual(value,DEFAULT_REVIEW_SETTINGS[key])) put(["setting",language,key],value);
     }
     if (settings.weights) put(["model",language],{weights:settings.weights,modelTrainedAt:settings.modelTrainedAt || ""});
   }

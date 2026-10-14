@@ -1,5 +1,5 @@
 import { CARD_TYPES } from "./cards.mjs";
-import { DEFAULT_REVIEW_SETTINGS } from "./review-queue.mjs";
+import { DEFAULT_REVIEW_SETTINGS } from "./review-settings.mjs";
 import { validWeights } from "./fsrs-model.mjs";
 import { validCourseKey } from "./languages.mjs";
 
@@ -11,12 +11,12 @@ export function cleanSettings(value = {}) {
   if (!object(value)) value = {};
   return {
     newLimit: Math.round(
-      Math.min(100, Math.max(0, Number(value.newLimit ?? 10) || 0)),
+      Math.min(100, Math.max(0, Number(value.newLimit ?? DEFAULT_REVIEW_SETTINGS.newLimit) || 0)),
     ),
     reviewLimit: Math.round(
-      Math.min(1000, Math.max(0, Number(value.reviewLimit ?? 100) || 0)),
+      Math.min(1000, Math.max(0, Number(value.reviewLimit ?? DEFAULT_REVIEW_SETTINGS.reviewLimit) || 0)),
     ),
-    retention: Math.min(0.97, Math.max(0.8, Number(value.retention) || 0.9)),
+    retention: Math.min(0.97, Math.max(0.8, Number(value.retention) || DEFAULT_REVIEW_SETTINGS.retention)),
     templates:
       Array.isArray(value.templates) &&
       value.templates.some((type) => Object.hasOwn(CARD_TYPES, type))

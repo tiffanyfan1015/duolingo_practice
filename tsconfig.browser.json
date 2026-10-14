@@ -4,5 +4,15 @@
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "types": []
   },
-  "include": ["shared/**/*.ts", "web/src/domain/study-validation.mjs", "web/src/services/study-client.mjs"]
+  "include": [
+    "shared/**/*.ts",
+    "web/src/domain/study-validation.mjs",
+    "web/src/domain/learning.mjs",
+    "web/src/domain/session.mjs",
+    "web/src/domain/review-settings.mjs",
+    "web/src/domain/vocabulary.mjs",
+    "web/src/services/study-client.mjs",
+    "web/src/dictionary-controller.mjs",
+    "web/src/ui/application-shell.mjs"
+  ]
 }

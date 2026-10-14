@@ -110,7 +110,19 @@ try:
         a.locator('.review-settings button[type="submit"]').click()
         synced(a)
         b.locator('[data-mode="review"]').click()
+        b.locator('.review-settings-panel summary').click()
+        b.locator('[name="newLimit"]').fill('13')
+        b.locator('[name="templates"][value="recognition"]').uncheck()
+        b.locator('[name="templates"][value="listening"]').check()
         sync(b)
+        # A background redraw updates stored settings, but preserves the whole unsaved form.
+        assert state(b,'cijian-review-v1')['settings']['de']['newLimit']==7
+        assert b.locator('[name="newLimit"]').input_value()=='13'
+        assert not b.locator('[name="templates"][value="recognition"]').is_checked()
+        assert b.locator('[name="templates"][value="listening"]').is_checked()
+        b.reload()
+        synced(b)
+        b.locator('[data-mode="review"]').click()
         assert b.locator('[name="newLimit"]').input_value()=='7'
         a.locator('[data-review-action="start"]').click()
         a.locator('[data-review-action="reveal"]').click()

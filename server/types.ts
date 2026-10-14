@@ -1,5 +1,7 @@
 import type { D1Database, Fetcher } from '@cloudflare/workers-types';
 import type { accountRepository } from './accounts/repository.ts';
+import type { Unit, CatalogCourse } from '../shared/vocabulary.ts';
+export type { Unit, VocabularyWord, CatalogCourse, Catalog } from '../shared/vocabulary.ts';
 
 export interface Env {
   ASSETS: Fetcher;
@@ -34,17 +36,6 @@ export interface CourseSelection {
   available: boolean;
 }
 export interface CourseSettings { revision: number; courses: CourseSelection[] }
-export interface Unit { id: string; section: number; position: number; title: string }
-export interface VocabularyWord {
-  id: string; text: string; meanings: string[]; units: string[];
-  audio?: string | null; reading?: string; romaji?: string; readingPending?: boolean;
-}
-export interface CatalogCourse {
-  id: string; name: string; language?: string; fromLanguage?: string;
-  words: VocabularyWord[]; units: Unit[]; exportedAt?: string;
-  sync?: { source: string; courseId: string; mapping: string; rawMeanings: boolean; learnedSkills: number };
-}
-export interface Catalog { courses: CatalogCourse[] }
 export interface Skill { skillId: { id: string }; finishedLevels: number; finishedSessions: number }
 export interface CourseIdentity { id: string; learningLanguage: string; fromLanguage: string }
 export interface CourseSnapshot { course: CourseIdentity; skills: Skill[]; units: (Unit & {skillIds: string[]})[] }

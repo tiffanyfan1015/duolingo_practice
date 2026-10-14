@@ -95,6 +95,7 @@ export function bindEvents(actions) {
   $("#romaji").onchange = () => actions.setRomaji($("#romaji").checked);
   $("#home").onclick = () => actions.changeMode("list");
   $(".close").onclick = () => $("#detail").close();
+  $("#detail").addEventListener("close", () => actions.closeDetail());
   $("#detail").addEventListener("click", (event) => {
     if (event.target === $("#detail")) $("#detail").close();
   });

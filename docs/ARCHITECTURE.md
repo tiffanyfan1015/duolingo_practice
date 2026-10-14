@@ -13,6 +13,14 @@
 
 ## 前端
 
+主流程 `app-controller` 不直接查詢或修改 DOM。應用層的帳號提示、同步區域與背景重繪的草稿保留集中在 `ui/application-shell.mjs`；HTML 模板仍放 `ui/views`，事件仍經 `ui/events` 轉送 controller。
+
+`dictionary-controller.mjs` 透過注入的 client 與呈現 callback 管理請求版本；切換詞條、關閉詳情或開啟說明會使舊請求失效。它不操作 DOM、不儲存筆記，也不自行發送 HTTP。
+
+`shared/vocabulary.ts` 是前後端共用的字庫型別，`shared/practice.ts` 定義自由練習與單字進度。`learning.mjs`、`session.mjs`、`vocabulary.mjs` 保留瀏覽器可直接載入的模組格式，透過 JSDoc 與 `@ts-check` 接受嚴格 TypeScript 檢查。型別不取代匯入資料的執行期驗證。
+
+複習預設值統一於 `domain/review-settings.mjs`，排程、資料清理與同步封包共用；原 `review-queue.mjs` 匯出保留相容。不要在同步程式另外複製預設值。
+
 ```text
 web/app.js                       組裝依賴與啟動
 web/src/app-controller.mjs        應用流程、目前語言／模式／練習狀態
@@ -108,7 +116,7 @@ python tests/browser_check.py
 
 ## 正式單字詳情與按需查字典
 
-- `app-controller` 啟動查詢、處理重試與請求版本；透過 shell 僅更新字典區域，不重繪筆記或讓已關閉詞條的舊回應覆蓋新內容。
+- `app-controller` 轉送詳情開啟、關閉與重試操作給 `dictionary-controller`；透過 shell 僅更新字典區域，不重繪筆記或讓已關閉詞條的舊回應覆蓋新內容。
 - `services/dictionary-client.mjs` 負責同源 API、當次頁面快取與原形查詢流程；`dictionary-parser.mjs` 在不啟用內容的 template 中解析來源，再輸出文字資料。來源 HTML 永不掛到頁面上。
 - `domain/dictionary.mjs` 提供保守的詞形比對、義項排序與中文表頭；不推測未取得的義項，不刪除其他意思。`ui/views/dictionary.mjs` 與 `styles/dictionary.css` 提供正式卡片、例句、折疊義項及詞形表。
 - `server/dictionary/routes.ts` 提供固定上游、限量、限時、限流暫停與有界記憶體快取；必須先通過既有 Worker 登入驗證。本機 `vocab_sync/dictionary_http.py` 沿用 Python API transport 與七天快取，`serve_web.py` 僅組裝 handler。
