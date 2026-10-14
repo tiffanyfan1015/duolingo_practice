@@ -111,6 +111,8 @@ test("mobile sync resumes, validates units and atomically publishes only the sel
     ["de:Haus", "de:Buch"],
   );
   assert.deepEqual(de.words[0].units, ["s1u1"]);
+  assert.deepEqual(de.words.find(w => w.text === "Buch").meanings, ["書"]);
+  assert.equal(de.sync.rawMeanings, false);
   assert.equal(courses.find((c) => c.id === "ja").words[0].text, "old");
   assert.deepEqual(await service.step("de", job.id), job);
 });

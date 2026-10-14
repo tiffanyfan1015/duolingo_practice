@@ -36,6 +36,27 @@ export function matchedJapaneseLemmas(data, term) {
   return matches.slice(0,3);
 }
 
+// Pair the same conjugation of a dictionary spelling and its kana reading.
+// Multiple distinct readings remain ambiguous and are never selected arbitrarily.
+export function matchedJapaneseReading(data, term) {
+  const readings = new Set();
+  for (const entry of (data.data || []).slice(0, 5)) {
+    const pos = (entry.senses || []).flatMap(s => s.parts_of_speech || []);
+    for (const spelling of entry.japanese || []) {
+      if (!spelling.reading) continue;
+      const lemma = spelling.word || spelling.reading;
+      if (lemma === term || spelling.reading === term) readings.add(spelling.reading);
+      const forms = japaneseLookupForms(lemma, pos);
+      const index = forms.indexOf(term);
+      if (index >= 0) {
+        const kana = japaneseLookupForms(spelling.reading, pos)[index];
+        if (kana) readings.add(kana);
+      }
+    }
+  }
+  return readings.size === 1 ? [...readings][0] : null;
+}
+
 export const dictionaryTableLabel = (label, language) => (language === "ja" ? {
   "敬體":"ます形（禮貌形）", "敬体":"ます形（禮貌形）", "接續":"て形（連接形）", "接续":"て形（連接形）",
   "完成":"た形（過去／完成）", "否定":"否定形", "被動":"被動形", "被动":"被動形", "使役":"使役形", "可能":"可能形",

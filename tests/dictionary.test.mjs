@@ -54,7 +54,7 @@ test("proxy fixes provider URLs, strips secrets, bounds responses and caches suc
   const proxy=createDictionaryProxy(async(url,options)=>{
     calls++; assert.equal(new URL(url).hostname,"zh.wiktionary.org");
     assert.equal(options.headers.Cookie,undefined); assert.equal(options.headers.Authorization,undefined);
-    assert.equal(options.redirect,"error");
+    assert.equal(options.redirect,"manual");
     return Response.json({parse:{title:"test",text:"<h2>德語</h2>",revid:1}});
   });
   const a=await proxy(dictionaryRequest("https://evil.test", "wiki",{headers:{Cookie:"secret",Authorization:"secret"}}));
@@ -71,6 +71,22 @@ test("transient upstream errors are not cached as empty results",async()=>{
   assert.equal((await proxy(dictionaryRequest())).status,502);
   assert.equal((await proxy(dictionaryRequest())).status,200);
   assert.equal(calls,2);
+});
+
+test("dictionary redirects never follow an untrusted destination or poison the cache",async()=>{
+  for (const provider of ["wiki", "jisho"]) {
+    let calls=0;
+    const proxy=createDictionaryProxy(async(_url,options)=>{
+      calls++;
+      assert.equal(options.redirect,"manual");
+      if (calls===1) return new Response(null,{status:302,headers:{Location:"https://other.test/"}});
+      return Response.json(provider==="wiki" ? {error:{code:"missingtitle"}} : {meta:{status:200},data:[]});
+    });
+    assert.equal((await proxy(dictionaryRequest("redirect",provider))).status,502);
+    assert.equal(calls,1);
+    assert.equal((await proxy(dictionaryRequest("redirect",provider))).status,200);
+    assert.equal(calls,2);
+  }
 });
 test("upstream rate limit pauses new requests without discarding cached words",async()=>{
   let calls=0;

@@ -1,6 +1,6 @@
 import { dueNow } from "../domain/learning.mjs";
 import { $, $$ } from "./dom.mjs";
-import { esc, unitLabel } from "./views/shared.mjs";
+import { esc, unitLabel, reading } from "./views/shared.mjs";
 import { listView } from "./views/word-list.mjs";
 import { practiceView } from "./views/practice.mjs";
 import { courseSwitchView, noCoursesView } from "./views/courses.mjs";
@@ -95,6 +95,12 @@ export function updateDictionaryDetail(id, html) {
   const target = $("#dictionary-content");
   if (!$("#detail").open || target?.dataset.dictionaryWord !== id) return;
   target.innerHTML = html;
+}
+
+export function updateWordReading(word, showRomaji) {
+  for (const target of $$("[data-reading-word]")) {
+    if (target.dataset.readingWord === word.id) target.outerHTML = reading(word, "ja", showRomaji);
+  }
 }
 
 export function showLoadError() {

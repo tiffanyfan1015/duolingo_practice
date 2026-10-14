@@ -18,8 +18,9 @@ export const unitLabel = (unit) =>
 
 export function reading(word, language, showRomaji) {
   if (language !== "ja") return "";
-  if (word.readingPending)
-    return '<span class="reading">讀音待補，可先聽發音</span>';
+  const attributes = `class="reading" data-reading-word="${esc(word.id)}"`;
+  if (word.readingPending && !word.reading)
+    return `<span ${attributes}>讀音待補，可先聽發音</span>`;
   const kana = word.reading !== word.text ? esc(word.reading) : "";
-  return `<span class="reading">${kana}${showRomaji ? ` <span>${esc(word.romaji)}</span>` : ""}</span>`;
+  return `<span ${attributes}>${kana}${showRomaji ? ` <span>${esc(word.romaji)}</span>` : ""}</span>`;
 }

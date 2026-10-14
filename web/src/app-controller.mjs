@@ -1,6 +1,7 @@
 import { mountSync } from "./sync-controller.mjs";
 import { mountStudySync } from "./study-sync-controller.mjs";
-import { createStudyStore } from "./services/progress-store.mjs";
+import { createStudyStore, createReadingStore } from "./services/progress-store.mjs";
+import { createReadingController } from "./reading-controller.mjs";
 import { createDictionaryClient } from "./services/dictionary-client.mjs";
 import { createDictionaryController } from "./dictionary-controller.mjs";
 import { configureAccountUI, getSyncArea, reloadApplication, refreshStudyWorkspace } from "./ui/application-shell.mjs";
@@ -22,6 +23,7 @@ import {
   renderCourseSwitch,
   showNoCourses,
   updateDictionaryDetail,
+  updateWordReading,
 } from "./ui/shell.mjs";
 import { detailView } from "./ui/views/word-detail.mjs";
 import { aboutView } from "./ui/views/about.mjs";
@@ -38,10 +40,16 @@ export function mountApplication({ catalog, progress, review, audio, notify, sto
     catch (error) { notify(error.message); }
   }
   configureAccountUI(!!catalog.user, catalog.user && storage ? !!study : null);
-  const dictionary = createDictionaryController(
-    createDictionaryClient({userId: catalog.user?.id}),
-    (selected, result) => updateDictionaryDetail(selected.id, dictionaryView(result, selected)),
-  );
+  const dictionaryClient = createDictionaryClient({userId: catalog.user?.id});
+  const readings = createReadingController({
+    client: dictionaryClient, store: createReadingStore(storage),
+    present: selected => updateWordReading(selected, progress.romaji),
+  });
+  readings.restore(catalog.courses);
+  const dictionary = createDictionaryController(dictionaryClient, (selected, result) => {
+    readings.accept(selected, result);
+    updateDictionaryDetail(selected.id, dictionaryView(result, selected));
+  });
   renderCourseSwitch(catalog.courses);
   if (!catalog.courses.length) {
     showNoCourses();
@@ -80,6 +88,7 @@ export function mountApplication({ catalog, progress, review, audio, notify, sto
     onComplete: async () => {
       const updated = await loadCatalog(fetch, catalog.user?.id);
       catalog.courses = updated.courses;
+      readings.restore(catalog.courses);
       if (!catalog.courses.some((c) => c.id === state.language)) {
         reloadApplication();
         return;
@@ -110,6 +119,11 @@ export function mountApplication({ catalog, progress, review, audio, notify, sto
       reviewSummary: state.mode === "review" ? daily.summary() : null,
       reviewStarted: daily.startedCount(),
     });
+    const visible = state.mode === "list"
+      ? words.slice(state.page * size, (state.page + 1) * size)
+      : state.mode === "review" ? [daily.currentWord()].filter(Boolean)
+        : state.session?.words.slice(state.session.index, state.session.index + 1) || [];
+    readings.ensure(visible, course().language || course().id);
   }
 
   function reset() {

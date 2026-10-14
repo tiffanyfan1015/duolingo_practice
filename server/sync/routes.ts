@@ -7,6 +7,7 @@ import { userRepository } from "./user-repository.ts";
 import { accountCredential, publicAccount } from "../accounts/service.ts";
 import { courseSettings } from "../courses/service.ts";
 import { dictionaryRoute } from "../dictionary/routes.ts";
+import { enrichCourse } from "./enrichment.ts";
 export const json = (data: unknown, status = 200) =>
   Response.json(data, {
     status,
@@ -46,8 +47,10 @@ export async function api(request: Request, env: Env, user: Account | null = nul
       !env.DB
     )
       return json({ available: false, message: "此環境尚未設定雲端同步。" });
-    if (url.pathname === "/api/catalog" && request.method === "GET" && !env.DB)
-      return json(await baseCatalog(request, env));
+    if (url.pathname === "/api/catalog" && request.method === "GET" && !env.DB) {
+      const catalog = await baseCatalog(request, env);
+      return json({ ...catalog, courses: catalog.courses.map(enrichCourse) });
+    }
     const repo = user ? userRepository(env.DB, user) : repository(env.DB);
     await repo.init();
     const selected = user ? (await courseSettings(env, user)).courses.filter((c) => c.active && c.available) : null;
@@ -57,7 +60,7 @@ export async function api(request: Request, env: Env, user: Account | null = nul
       return json({
         ...(user ? { user: publicAccount(user) } : {}),
         courses: base.courses.map(
-          (course) => ({ ...course, ...(saved.find((item) => item.id === course.id) || {}) }),
+          (course) => enrichCourse({ ...course, ...(saved.find((item) => item.id === course.id) || {}) }),
         ),
       });
     }

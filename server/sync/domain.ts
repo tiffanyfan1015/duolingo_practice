@@ -1,5 +1,6 @@
 import { SyncError } from "./duolingo.ts";
 import { languageName } from "../../web/src/domain/languages.mjs";
+import { enrichCourse } from "./enrichment.ts";
 import type { CourseSelection, CourseSnapshot, Skill, PageState, Lexeme, SyncJob, CatalogCourse } from "../types.ts";
 import { record } from "../types.ts";
 export function courseState(profile: unknown, language: string, target: CourseSelection | null = null): CourseSnapshot {
@@ -185,7 +186,7 @@ export function transform(job: SyncJob, previous: CatalogCourse | undefined): Ca
       position: 0,
       title: "尚未確認單元",
     });
-  return {
+  return enrichCourse({
     id: job.language,
     language: job.learningLanguage || job.language,
     fromLanguage: job.course.fromLanguage,
@@ -200,5 +201,5 @@ export function transform(job: SyncJob, previous: CatalogCourse | undefined): Ca
       rawMeanings: true,
       learnedSkills: job.skills.length,
     },
-  };
+  });
 }

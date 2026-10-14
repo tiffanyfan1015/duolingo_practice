@@ -17,6 +17,9 @@ JA = '''<h2>日語</h2><h3>動詞</h3><p><span class="headword-line"><strong cla
 <h2>德語</h2><h3>名詞</h3><ol><li>不應混入</li></ol>'''
 DE = '''<h2>德語</h2><h3>動詞</h3><p><span class="headword-line"><strong class="headword" lang="de">sprechen</strong> 助動詞 haben</span></p><ol><li>說話<dl><dd><i lang="de">Ich spreche Deutsch.</i><dl><dd><span class="e-translation">我說德語。</span></dd></dl></dd></dl></li><li>宣布</li></ol><h4>變位</h4><table><tr><th>過去分詞</th><td>gesprochen</td></tr><tr><th>現在式</th><td>er spricht</td></tr></table>'''
 
+JA = JA.replace('維持生計', '维持生计').replace('吃麵包。', '吃面包。')
+DE = DE.replace('說話', '说话').replace('我說德語。', '我说德语。')
+
 def word(text, language, meaning):
     return {'id': language + ':' + text, 'text': text, 'meanings': [meaning], 'units': ['u1'], 'audio': None}
 
@@ -79,6 +82,7 @@ try:
         page.locator('#note').fill('查詢中輸入的筆記')
         gate.set()
         page.locator('.dictionary-entry').wait_for()
+        assert page.locator('#detail [data-reading-word]').inner_text().strip() == 'たべます'
         assert page.locator('#note').input_value() == '查詢中輸入的筆記'
         audio = page.locator('#detail [data-audio]').bounding_box()
         divider = page.locator('#detail .detail-block').first.bounding_box()
@@ -99,6 +103,7 @@ try:
         page.screenshot(path=str(ROOT/'artifacts/dictionary-detail-desktop.png'))
         page.locator('.close').click()
         old_count=len(calls)
+        assert page.locator('.word-table [data-reading-word="ja:食べます"]').inner_text().strip() == 'たべます'
         page.locator('[data-detail="ja:食べます"]').click()
         page.locator('.dictionary-entry').wait_for()
         assert page.locator('#note').input_value() == '查詢中輸入的筆記'
@@ -128,6 +133,8 @@ try:
         gate.set()
         page.wait_for_timeout(300)
         assert page.locator('.dictionary-entry-heading h4').inner_text()=='sprechen'
+        assert page.locator('.dictionary-sense h5').first.inner_text()=='說話'
+        assert page.locator('.example-translation').inner_text()=='我說德語。'
         page.locator('summary').filter(has_text='完整詞形變化').click()
         assert '第三人稱單數' in page.locator('.dictionary-table-scroll').inner_text()
         page.locator('.close').click()
@@ -142,6 +149,15 @@ try:
             ('hoch','de','<h2>德語</h2><h3>形容詞</h3><ol><li>高</li></ol><h4>變格</h4><table><tr><td>'+nested+'</td></tr></table>'),
             ('ビール','ja','<h2>日語</h2><h3>名詞</h3><ol><li><span class="defdate">（自1724年）</span>啤酒<dl><dd><span lang="ja">日本麦酒</span><dl><dd>日本啤酒</dd></dl></dd><dd><span class="nyms">近義詞：僅用於複合詞 <span lang="ja">ビア</span></span></dd></dl></li></ol>'),
         ]
+        protected = page.evaluate('''async () => {
+          const {parseDictionaryPage}=await import('/src/services/dictionary-parser.mjs');
+          return parseDictionaryPage({parse:{title:'図書館',revid:1,text:'<h2>日語</h2><h3>名词</h3><p><span class="headword-line"><strong class="headword" lang="ja"><ruby>図書館<rt>としょかん</rt></ruby></strong></span></p><ol><li>图书馆<dl><dd><span lang="ja">図書館で本を読む。</span><dl><dd class="e-translation">在图书馆看书。</dd></dl></dd></dl></li></ol>'}},'ja')[0];
+        }''')
+        assert protected['lemma']=='図書館'
+        assert protected['pos']==['名詞']
+        assert protected['senses'][0]['glosses']==['圖書館']
+        assert protected['senses'][0]['examples'][0]['text']=='図書館で本を読む。'
+        assert protected['senses'][0]['examples'][0]['translation']=='在圖書館看書。'
         if '--cached-examples' in sys.argv:
             for title,language in [('hoch','de'),('ビール','ja'),('Gebäude','de'),('Stadtzentrum','de')]:
                 payload=json.loads((ROOT/'artifacts'/f'{title}-source.json').read_text(encoding='utf-8'))
@@ -178,6 +194,23 @@ try:
             page.locator('#detail').screenshot(path=str(ROOT/'artifacts'/f'dictionary-content-{index}.png'))
             page.set_viewport_size({'width':390,'height':844})
             assert page.locator('#detail').evaluate('(el)=>el.scrollWidth<=el.clientWidth')
+        # New cloud words fill readings automatically, then reuse the cache on reload.
+        catalog['courses'][0]['words'][0]['readingPending'] = True
+        fresh = browser.new_page(viewport={'width':390,'height':844})
+        fresh.on('pageerror',lambda e:errors.append(str(e)))
+        fresh.goto(f'http://127.0.0.1:{server.server_port}')
+        fresh.wait_for_function('document.querySelector(\'[data-reading-word="ja:食べます"]\')?.textContent.includes("たべます")')
+        fresh.locator('#romaji').check()
+        assert 'tabemasu' in fresh.locator('[data-reading-word="ja:食べます"]').inner_text()
+        old_count = len(calls)
+        fresh.reload()
+        fresh.wait_for_selector('.word-table')
+        assert 'たべます' in fresh.locator('[data-reading-word="ja:食べます"]').inner_text()
+        assert len(calls) == old_count
+        fresh.locator('#search').fill('食べます')
+        fresh.locator('[data-mode="flash"]').click()
+        fresh.locator('#start').click()
+        assert 'たべます' in fresh.locator('#content [data-reading-word]').inner_text()
         assert not errors,errors
         browser.close()
 finally:

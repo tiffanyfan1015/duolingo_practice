@@ -41,6 +41,7 @@ export function createReviewController({
     previews = null;
   }
   return {
+    currentWord: () => current()?.word || null,
     invalidate() {
       cache.clear();
       this.reset();

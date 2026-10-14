@@ -19,7 +19,9 @@ export function createDictionaryProxy(fetcher: typeof fetch = (...args) => fetch
       if (!pending.has(key)) {
         if (pending.size >= 4) return reply('{"error":"字典查詢繁忙，請稍後重試。"}', 429);
         const task = (async () => {
-          const response = await fetcher(key, { headers: { Accept: "application/json", "User-Agent": "DuolingoVocabulary/1.0 (per-word dictionary lookup)" }, signal: AbortSignal.timeout(15000), redirect: "error" });
+          // Workers rejects redirect:"error" before sending the request.
+          // Manual mode keeps requests confined to the fixed providers above.
+          const response = await fetcher(key, { headers: { Accept: "application/json", "User-Agent": "DuolingoVocabulary/1.0 (per-word dictionary lookup)" }, signal: AbortSignal.timeout(15000), redirect: "manual" });
           if (response.status === 429) {
             const raw = response.headers.get("Retry-After");
             const delay = /^\d+$/.test(raw || "") ? Number(raw)*1000 : Date.parse(raw || "")-Date.now();

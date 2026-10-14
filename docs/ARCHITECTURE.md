@@ -121,6 +121,8 @@ python tests/browser_check.py
 - `domain/dictionary.mjs` 提供保守的詞形比對、義項排序與中文表頭；不推測未取得的義項，不刪除其他意思。`ui/views/dictionary.mjs` 與 `styles/dictionary.css` 提供正式卡片、例句、折疊義項及詞形表。
 - `server/dictionary/routes.ts` 提供固定上游、限量、限時、限流暫停與有界記憶體快取；必須先通過既有 Worker 登入驗證。本機 `vocab_sync/dictionary_http.py` 沿用 Python API transport 與七天快取，`serve_web.py` 僅組裝 handler。
 - 字典內容不覆寫 Duolingo 字庫，也不寫入學習紀錄或備份；筆記仍經 progress-store 保存。正式頁不需要人工審核，獨立驗證工具仍保留供查詢品質檢查。
+- 日文讀音由 `reading-controller.mjs` 分批補齊目前顯示的待補單字（最多兩個並行查詢）；只接受詞條或已驗證詞形配對的唯一假名，不把原形讀音直接當作活用形讀音。透過 progress-store 匯出的 `reading-store` 保存可丟棄的帳號分區字典快取（30 天、最多 2000 筆），不更改學習紀錄／備份格式。應用 controller 更新記憶體字庫，shell 僅更新讀音節點以保留筆記草稿。
+- `services/language-tools.mjs` 封裝 OpenCC 與 WanaKana；由 `scripts/vendor-language.mjs` 產生自帶授權的靜態瀏覽器模組。字典解析只轉換中文文字，保留有語言標記的日文原文及外語例句。羅馬拼音由確認過的假名轉寫，不猜測漢字讀音。
 - 驗證：`tests/dictionary.test.mjs`、`tests/test_dictionary_http.py`、`tests/browser_dictionary_check.py`（合成 API 回應、獨立瀏覽器）。
 
 ## 跨裝置學習紀錄
