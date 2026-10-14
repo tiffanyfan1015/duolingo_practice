@@ -37,17 +37,28 @@ try:
         assert page.locator('body').evaluate("el => getComputedStyle(el).getPropertyValue('--action').trim()") == '#58cc02'
 
         def register(name):
+            assert page.locator('form[data-account="register"]').count() == 0
+            page.get_by_role('link', name='第一次使用？建立帳號').click()
+            page.wait_for_selector('form[data-account="register"]')
+            assert page.locator('form[data-account="login"]').count() == 0
             form = page.locator('form[data-account="register"]')
             form.locator('[name="username"]').fill(name)
             form.locator('[name="password"]').fill('browser-test-password-123')
             form.locator('[name="invite"]').fill('browser-test-invitation-code')
-            form.locator('button').click()
+            form.get_by_role('button', name='顯示本站密碼').click()
+            assert form.locator('[name="password"]').get_attribute('type') == 'text'
+            assert form.locator('[name="password"]').input_value() == 'browser-test-password-123'
+            form.get_by_role('button', name='隱藏本站密碼').click()
+            assert form.locator('[name="password"]').get_attribute('type') == 'password'
+            form.locator('button[type="submit"]').click()
             page.wait_for_selector('form[data-account="connect"]')
 
         def connect(identity):
             form = page.locator('form[data-account="connect"]')
             form.locator('input').fill(token(identity))
-            form.locator('button').click()
+            form.get_by_role('button', name='顯示Duolingo jwt_token').click()
+            assert form.locator('input').get_attribute('type') == 'text'
+            form.locator('button[type="submit"]').click()
             page.get_by_text('已連接，可前往練習室同步字庫。', exact=True).wait_for()
             assert page.locator('[name="token"]').input_value() == ''
 
@@ -57,6 +68,10 @@ try:
             page.wait_for_selector('[data-star]')
             page.locator('#sync-area').filter(has_text='同步完成').wait_for()
             assert f'Haus-{identity}' in page.locator('#content').inner_text()
+            assert page.locator('.word-table .word-meta').count() == 0
+            page.reload()
+            page.wait_for_selector('[data-star]')
+            assert not page.locator('.sync-disclosure').evaluate('el => el.open')
             assert page.evaluate('() => document.documentElement.scrollWidth<=innerWidth')
 
         register('alice')
@@ -104,7 +119,7 @@ try:
         assert study_records() == alice_records
         page.locator('#account-link').click()
         page.locator('form[data-account="logout"] button').click()
-        page.wait_for_selector('form[data-account="register"]')
+        page.wait_for_selector('form[data-account="login"]')
         register('bob')
         connect('202')
         sync('202')
@@ -118,9 +133,7 @@ try:
         form = page.locator('form[data-account="login"]')
         form.locator('[name="username"]').fill('alice')
         form.locator('[name="password"]').fill('browser-test-password-123')
-        form.locator('button').click()
-        page.wait_for_selector('.primary-link')
-        page.locator('.primary-link').click()
+        form.locator('button[type="submit"]').click()
         page.wait_for_selector('[data-star]')
         assert 'Haus-101' in page.locator('#content').inner_text()
         assert 'Haus-202' not in page.locator('#content').inner_text()

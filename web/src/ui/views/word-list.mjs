@@ -7,7 +7,6 @@ export function listView(
     page,
     pageSize,
     hideMeaning,
-    course: catalog,
     records,
     language,
     showRomaji,
@@ -46,14 +45,7 @@ export function listView(
                 >
                   ${esc(w.meanings.slice(0, 3).join("、"))}
                 </div>
-                <div class="word-meta">
-                  ${w.units.length > 1
-                    ? `${w.units.length} 個相關單元 · `
-                    : ""}${esc(
-                    catalog.units.find((u) => u.id === w.units[0])?.title ||
-                      "未分類",
-                  )}${w.meanings.length > 3 ? " · 點單字看完整釋義" : ""}
-                </div>
+                ${w.meanings.length > 3 ? '<div class="word-meta">點單字看完整釋義</div>' : ""}
               </td>
               <td>
                 <span class="tag ${dueNow(r) ? "review" : ""}"

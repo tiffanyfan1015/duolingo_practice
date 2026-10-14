@@ -220,7 +220,7 @@ test("Duolingo client confines credentials to its API and reports expired or ref
   );
   const api = createDuolingoClient(token, async (url, options) => {
     assert.match(url, /^https:\/\/www.duolingo.com\//);
-    assert.equal(options.redirect, "error");
+    assert.equal(options.redirect, "manual");
     assert.equal(options.headers.Authorization, "Bearer " + token);
     return new Response("", { status: 403 });
   });
@@ -232,5 +232,36 @@ test("JWT without exp is validated by Duolingo; malformed expiry is rejected", (
   assert.equal(userId(encode({ sub: "123" })), "123");
   for (const exp of [null, "tomorrow", false, 0]) {
     assert.throws(() => userId(encode({ sub: "123", exp })));
+  }
+});
+
+test("Duolingo redirects are rejected without forwarding credentials", async () => {
+  const token = "a." + btoa(JSON.stringify({ sub: "123" })) + ".z";
+  for (const status of [301, 302, 303, 307, 308]) {
+    let calls = 0;
+    const api = createDuolingoClient(token, async (_url, options) => {
+      calls++;
+      assert.equal(options.redirect, "manual");
+      return new Response(null, { status, headers: { Location: "https://other.test/" } });
+    });
+    await assert.rejects(api.profile(), /重新導向/);
+    assert.equal(calls, 1);
+  }
+});
+
+test("Duolingo distinguishes timeout from transport failure without exposing error details", async () => {
+  const token = "a." + btoa(JSON.stringify({ sub: "123" })) + ".z";
+  for (const name of ["TimeoutError", "AbortError", "TypeError"]) {
+    const api = createDuolingoClient(token, async () => {
+      const error = new Error("sensitive details " + token);
+      error.name = name;
+      throw error;
+    });
+    await assert.rejects(api.courses(), (error) => {
+      assert.equal(error.status, 502);
+      assert.match(error.message, name === "TypeError" ? /無法連線/ : /逾時/);
+      assert.ok(!error.message.includes(token));
+      return true;
+    });
   }
 });

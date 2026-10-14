@@ -4,9 +4,11 @@
 export function configureAccountUI(signedIn, studyAvailable) {
   const link = document.querySelector('#account-link');
   if (link instanceof HTMLElement) link.hidden = !signedIn;
-  if (studyAvailable === null) return;
   const hint = document.querySelector('.storage-note');
-  if (hint) hint.textContent = '同帳號可同步學習紀錄；切換裝置前請確認已同步。';
+  if (hint) hint.textContent = signedIn
+    ? '同帳號可同步學習紀錄；切換裝置前請確認已同步。'
+    : '紀錄儲存在此瀏覽器；換裝置時可備份再匯入。';
+  if (studyAvailable === null) return;
   const area = document.querySelector('#study-sync-area');
   if (!studyAvailable && area) area.textContent = '學習同步未啟動，請先備份紀錄並檢查瀏覽器儲存空間。';
 }

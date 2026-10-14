@@ -75,6 +75,7 @@ export function mountApplication({ catalog, progress, review, audio, notify, sto
     element: getSyncArea(),
     language: () => state.language,
     courseName: () => course().name,
+    hasWords: () => course().words.length > 0,
     userId: catalog.user?.id,
     onComplete: async () => {
       const updated = await loadCatalog(fetch, catalog.user?.id);

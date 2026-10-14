@@ -4,6 +4,7 @@ export function mountSync({
   element,
   language,
   courseName = language,
+  hasWords = () => false,
   onComplete,
   userId = null,
   client = createSyncClient(fetch, userId),
@@ -11,25 +12,32 @@ export function mountSync({
   let busy = false,
     job = null,
     message = "",
-    generation = 0;
+    generation = 0,
+    expanded = !hasWords();
   const render = () => {
-    element.innerHTML = syncView({ courseName: courseName(), busy, job, message });
+    element.innerHTML = syncView({ courseName: courseName(), busy, job, message, expanded });
   };
+  element.addEventListener("toggle", (event) => {
+    if (event.target.matches?.(".sync-disclosure") && element.contains(event.target)) expanded = event.target.open;
+  }, true);
   async function refresh() {
     if (busy) return;
     const ticket = ++generation;
     job = null;
     message = "";
+    expanded = !hasWords();
     render();
     try {
       const result = await client.status(language());
       if (ticket !== generation) return;
       job = result.job;
       message = result.message || "";
+      expanded = expanded || !!message || !!(job && job.phase !== "done");
       render();
     } catch (error) {
       if (ticket === generation) {
         message = error.message;
+        expanded = true;
         render();
       }
     }
@@ -40,6 +48,7 @@ export function mountSync({
     const selected = language();
     ++generation;
     busy = true;
+    expanded = true;
     message = "";
     render();
     try {

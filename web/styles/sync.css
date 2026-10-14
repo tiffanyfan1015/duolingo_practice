@@ -5,6 +5,8 @@
   border-radius: 14px;
   background: white;
 }
+.sync-disclosure { margin: 12px 0; }
+.sync-disclosure > summary { cursor: pointer; color: var(--muted, #777); font-size: 14px; padding: 8px 0; }
 .sync-panel p {
   color: var(--muted);
   line-height: 1.7;

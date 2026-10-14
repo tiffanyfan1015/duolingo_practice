@@ -38,6 +38,7 @@ with sync_playwright() as p:
     page.wait_for_selector('.word-table')
     page.locator('[data-star]').first.click()
     records=page.evaluate('localStorage.getItem("cijian-progress-v1")')
+    page.locator('.sync-disclosure > summary').click()
     page.locator('[data-sync="continue"]').click()
     page.wait_for_function('document.querySelector("#sync-area").textContent.includes("network interruption")')
     assert page.locator('#total').inner_text()=='536'

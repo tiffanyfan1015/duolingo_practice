@@ -40,7 +40,8 @@ export function createDuolingoClient(token: string | undefined, fetcher: typeof 
     try {
       response = await fetcher("https://www.duolingo.com" + path, {
         method: body ? "POST" : "GET",
-        redirect: "error",
+        // Workers supports manual redirects; never forward the JWT to a redirect target.
+        redirect: "manual",
         signal: AbortSignal.timeout(20000),
         headers: {
           Authorization: `Bearer ${token}`,
@@ -49,9 +50,13 @@ export function createDuolingoClient(token: string | undefined, fetcher: typeof 
         },
         ...(body ? { body: JSON.stringify(body) } : {}),
       });
-    } catch {
-      throw new SyncError("Duolingo 連線逾時或無法連線，請稍後繼續同步。", 502);
+    } catch (error) {
+      if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError"))
+        throw new SyncError("Duolingo 連線逾時，請稍後再試。", 502);
+      throw new SyncError("無法連線至 Duolingo，請稍後再試。", 502);
     }
+    if (response.status >= 300 && response.status < 400)
+      throw new SyncError("Duolingo 要求重新導向，已停止連線；請確認 Duolingo 網站可正常登入後再試。", 502);
     if (!response.ok) {
       const hints: Record<number, string> = {
         401: "Duolingo 登入失效，請重新連接 Duolingo。",

@@ -1,8 +1,14 @@
 {
-  "name": "cijian-private",
+  "name": "duolingo-vocab",
   "main": "server/worker.ts",
   "compatibility_date": "2026-09-01",
   "workers_dev": true,
+  "routes": [
+    {
+      "pattern": "duo-vocab.tiffanyfan.com",
+      "custom_domain": true
+    }
+  ],
   "vars": { "MULTI_USER": "true" },
   "assets": {
     "directory": "./dist",
@@ -13,7 +19,7 @@
     {
       "binding": "DB",
       "database_name": "duolingo-vocab-db",
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID"
+      "database_id": "9a50eaf3-db6f-4029-b1f8-d95b77b41dea"
     }
   ]
 }
