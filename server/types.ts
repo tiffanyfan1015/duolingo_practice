@@ -45,6 +45,7 @@ export interface SyncJob extends CourseSnapshot {
   id: string; language: string; learningLanguage?: string; signature: string;
   phase: 'words' | 'units' | 'verify' | 'commit' | 'done';
   page: PageState; words: Lexeme[]; probes: {id: string; words: string[]}[];
+  reusedProbeIds?: string[];
   startedAt: number; updatedAt: number; completedAt?: string; revision?: number;
 }
 export interface SyncRepository {

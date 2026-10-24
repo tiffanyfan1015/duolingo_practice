@@ -1,4 +1,4 @@
-import { matchedJapaneseLemmas, matchedJapaneseReading } from "../domain/dictionary.mjs";
+import { matchedJapaneseLemmas, matchedJapaneseReadings } from "../domain/dictionary.mjs";
 import { parseDictionaryPage } from "./dictionary-parser.mjs";
 import { kanaPronunciation } from "./language-tools.mjs";
 
@@ -12,15 +12,23 @@ export function createDictionaryClient({ fetcher = fetch, parse = parseDictionar
   async function lookup(text, language) {
     let candidates = parse(await query("wiki",text),language);
     let pronunciation = null;
+    let readingEntries = [];
     if (language === "ja") {
       const readings = [...new Set(candidates.filter(c=>c.lemma === text).flatMap(c=>(c.readings || []).map(r=>r.text)))];
       pronunciation = kanaPronunciation(text) || (readings.length === 1 ? kanaPronunciation(readings[0]) : null);
     }
-    if (language === "ja" && (!candidates.length || !pronunciation)) {
+    if (language === "ja") {
       let data;
       try { data = await query("jisho",text); }
       catch (error) { if (!candidates.length) throw error; }
-      if (data) pronunciation ||= kanaPronunciation(matchedJapaneseReading(data,text));
+      if (data) {
+        readingEntries = matchedJapaneseReadings(data,text).filter(entry => kanaPronunciation(entry.reading));
+        const readings = new Set([
+          ...candidates.filter(c => c.lemma === text).flatMap(c => (c.readings || []).map(r => r.text)).filter(r => kanaPronunciation(r)),
+          ...readingEntries.map(entry => entry.reading),
+        ]);
+        pronunciation = kanaPronunciation(text) || (readings.size === 1 ? kanaPronunciation([...readings][0]) : null);
+      }
       for (const lemma of !candidates.length && data ? matchedJapaneseLemmas(data,text) : []) {
         const found = parse(await query("wiki",lemma),language);
         for (const c of found) c.lookupSource = `https://jisho.org/search/${encodeURIComponent(text)}`;
@@ -30,7 +38,7 @@ export function createDictionaryClient({ fetcher = fetch, parse = parseDictionar
     if (!candidates.length && language === "de" && /^(der|die|das)\s+\S/.test(text)) {
       candidates = parse(await query("wiki",text.replace(/^(der|die|das)\s+/,"")),language);
     }
-    return {status:candidates.length ? "ready" : "empty",candidates,pronunciation};
+    return {status:candidates.length || readingEntries.length ? "ready" : "empty",candidates,pronunciation,readingEntries};
   }
   return {
     async lookup(text,language) {

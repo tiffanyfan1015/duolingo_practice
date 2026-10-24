@@ -39,22 +39,40 @@ export function matchedJapaneseLemmas(data, term) {
 // Pair the same conjugation of a dictionary spelling and its kana reading.
 // Multiple distinct readings remain ambiguous and are never selected arbitrarily.
 export function matchedJapaneseReading(data, term) {
-  const readings = new Set();
+  const readings = new Set(matchedJapaneseReadings(data, term).map(entry => entry.reading));
+  return readings.size === 1 ? [...readings][0] : null;
+}
+
+export function matchedJapaneseReadings(data, term) {
+  const matches = new Map();
   for (const entry of (data.data || []).slice(0, 5)) {
     const pos = (entry.senses || []).flatMap(s => s.parts_of_speech || []);
     for (const spelling of entry.japanese || []) {
       if (!spelling.reading) continue;
       const lemma = spelling.word || spelling.reading;
-      if (lemma === term || spelling.reading === term) readings.add(spelling.reading);
+      let reading = lemma === term || spelling.reading === term ? spelling.reading : null;
       const forms = japaneseLookupForms(lemma, pos);
       const index = forms.indexOf(term);
       if (index >= 0) {
         const kana = japaneseLookupForms(spelling.reading, pos)[index];
-        if (kana) readings.add(kana);
+        if (kana) reading = kana;
       }
+      if (!reading) continue;
+      const senses = (entry.senses || []).filter(s =>
+        !(s.parts_of_speech || []).includes("Wikipedia definition") &&
+        (!s.restrictions?.length || s.restrictions.some(r => r === lemma || r === spelling.reading))
+      ).map(s => ({
+        glosses: s.english_definitions || [], pos: s.parts_of_speech || [],
+        tags: s.tags || [], notes: s.info || [],
+      }));
+      const match = matches.get(reading) || {reading, senses: []};
+      for (const sense of senses) {
+        if (!match.senses.some(s => JSON.stringify(s) === JSON.stringify(sense))) match.senses.push(sense);
+      }
+      matches.set(reading, match);
     }
   }
-  return readings.size === 1 ? [...readings][0] : null;
+  return [...matches.values()];
 }
 
 export const dictionaryTableLabel = (label, language) => (language === "ja" ? {

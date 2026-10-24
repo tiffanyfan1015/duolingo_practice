@@ -54,6 +54,11 @@ class Handler(SimpleHTTPRequestHandler):
             if failures[term] == 1:
                 return self.reply({'error':'temporary'},502)
         if provider == 'jisho':
+            if term == '時':
+                return self.reply({'data':[
+                    {'japanese':[{'word':'時','reading':'とき'}],'senses':[{'parts_of_speech':['Noun'],'english_definitions':['time']}]},
+                    {'japanese':[{'word':'時','reading':'じ'}],'senses':[{'parts_of_speech':['Suffix'],'english_definitions':["o'clock"]}]},
+                ]})
             return self.reply({'meta': {'status':200}, 'data': [{'japanese':[{'word':'食べる','reading':'たべる'}], 'senses':[{'parts_of_speech':['Ichidan verb']}]}] if term == '食べます' else []})
         if term in ['食べる','sprechen']:
             return self.reply({'parse':{'title':term,'revid':123,'text':JA if term == '食べる' else DE}})
@@ -211,6 +216,23 @@ try:
         fresh.locator('[data-mode="flash"]').click()
         fresh.locator('#start').click()
         assert 'たべます' in fresh.locator('#content [data-reading-word]').inner_text()
+        # Ambiguous words keep the Duolingo audio control and expose readings only in details.
+        catalog['courses'][0]['words'] = [{**word('時','ja','時間'), 'readingPending':True, 'audio':'https://d1vq87e9lcf771.cloudfront.net/test.mp3'}]
+        ambiguous = browser.new_page(viewport={'width':390,'height':844})
+        ambiguous.on('pageerror',lambda e:errors.append(str(e)))
+        ambiguous.goto(f'http://127.0.0.1:{server.server_port}')
+        ambiguous.locator('[data-detail="ja:時"]').wait_for()
+        assert not ambiguous.locator('.word-table [data-reading-word]').is_visible()
+        assert '讀音待補' not in ambiguous.locator('body').inner_text()
+        assert ambiguous.locator('.word-table [data-audio]').is_visible()
+        ambiguous.locator('[data-detail="ja:時"]').click()
+        ambiguous.locator('.dictionary-reading-card').first.wait_for()
+        assert ambiguous.locator('.dictionary-reading-card h5').all_text_contents() == ['とき','じ']
+        assert '接尾詞' in ambiguous.locator('.dictionary-readings').inner_text()
+        assert ambiguous.locator('#detail [data-audio]').is_visible()
+        assert not ambiguous.locator('#detail [data-reading-word]').is_visible()
+        assert ambiguous.locator('#detail').evaluate('(el)=>el.scrollWidth<=el.clientWidth')
+        ambiguous.locator('#detail').screenshot(path=str(ROOT/'artifacts/dictionary-readings-mobile.png'))
         assert not errors,errors
         browser.close()
 finally:

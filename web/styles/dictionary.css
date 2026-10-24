@@ -1,4 +1,6 @@
 /* Word details share the study site's colors, rounded controls and clear hierarchy. */
+.reading[hidden]{display:none}
+.dictionary-readings{margin:24px 0;padding:18px;border:1px solid #cde6f3;border-radius:16px;background:#f3faff}.dictionary-readings .dictionary-section-title{margin:0 0 10px;gap:12px;flex-wrap:wrap}.dictionary-reading-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px}.dictionary-reading-card{min-width:0;padding:16px;border:1px solid #dcebf2;border-radius:12px;background:#fff}.dictionary-reading-card h5{margin:0 0 12px;font-size:22px}.dictionary-reading-sense+.dictionary-reading-sense{border-top:1px solid #edf0e9;margin-top:10px;padding-top:10px}.dictionary-reading-sense p{margin:5px 0;font-size:14px;line-height:1.6}.dictionary-reading-pos{font-size:12px;color:#537c90}.dictionary-reading-sense .dictionary-footnote{font-size:12px}
 .detail-pronunciation{padding-bottom:20px}
 .dictionary-example-label{display:block;font-size:11px;font-weight:700;color:#65844d;margin-bottom:6px}
 #detail{width:min(820px,calc(100vw - 32px));max-width:none;max-height:90dvh;padding:32px;scrollbar-gutter:stable}

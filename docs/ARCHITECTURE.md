@@ -103,6 +103,8 @@ python tests/browser_check.py
 
 新增 server/ 分層，詳見 [CLOUD_SYNC.md](CLOUD_SYNC.md)。Duolingo API transport、同步領域規則、D1 repository、流程 service、HTTP routes 各自分開；worker 是登入與路由薄入口。前端同步亦拆成 controller／service／view。`scripts/cloud_build.py` 生成單一部署 Worker，不能將生成檔當作原始碼維護。私人字庫與憑證不進 GitHub。
 
+`server/sync/incremental.ts` 決定哪些已完成技能查詢可沿用，以及新／移除單字造成的重新核對；service 仍讀取完整單字清單，依技能 ID 選取未核對項目。沿用結果及 ID 保存在既有、依帳號與連線隔離的同步工作中，不新增資料表或改變學習紀錄。`restart=true` 強制完整同步；舊版未完成工作仍可接續，發布前的進度驗證與 revision 交易保護維持不變。
+
 ## 個人模型與資料驗證工具
 
 - `learning_tools/optimizer.py` 負責完整歷史、按單字分割訓練／驗證資料、官方訓練套件轉接。`scripts/optimize_fsrs.py` 是 CLI 薄入口，`scripts/fsrs-weights.mjs` 用網站鎖定的排程器驗證參數。
@@ -123,6 +125,7 @@ python tests/browser_check.py
 - 字典內容不覆寫 Duolingo 字庫，也不寫入學習紀錄或備份；筆記仍經 progress-store 保存。正式頁不需要人工審核，獨立驗證工具仍保留供查詢品質檢查。
 - 日文讀音由 `reading-controller.mjs` 分批補齊目前顯示的待補單字（最多兩個並行查詢）；只接受詞條或已驗證詞形配對的唯一假名，不把原形讀音直接當作活用形讀音。透過 progress-store 匯出的 `reading-store` 保存可丟棄的帳號分區字典快取（30 天、最多 2000 筆），不更改學習紀錄／備份格式。應用 controller 更新記憶體字庫，shell 僅更新讀音節點以保留筆記草稿。
 - `services/language-tools.mjs` 封裝 OpenCC 與 WanaKana；由 `scripts/vendor-language.mjs` 產生自帶授權的靜態瀏覽器模組。字典解析只轉換中文文字，保留有語言標記的日文原文及外語例句。羅馬拼音由確認過的假名轉寫，不猜測漢字讀音。
+- 單字表沒有確定假名時隱藏讀音文字，保留 Duolingo 播放按鈕。字典詳情另外呈現 Jisho 精確詞條／已驗證活用形的各種讀音與英文用法，依來源限制配對義項，排除不相關詞與百科義項；多種讀音不自動選一個寫回單字表。
 - 驗證：`tests/dictionary.test.mjs`、`tests/test_dictionary_http.py`、`tests/browser_dictionary_check.py`（合成 API 回應、獨立瀏覽器）。
 
 ## 跨裝置學習紀錄

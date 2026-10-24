@@ -31,10 +31,20 @@ function dictionaryEntryView(candidate,word) {
     ${dictionaryFormsView(candidate)}
     <footer class="dictionary-source">${dictionaryLink(candidate.source?.url,candidate.source?.name || "詞條來源")}${dictionaryLink(candidate.source?.licenseUrl,"授權")}${dictionaryLink(candidate.lookupSource,"原形查詢")}</footer></article>`;
 }
+function dictionaryReadingsView(entries, word) {
+  if (!entries?.length) return "";
+  const senseView = s => `<div class="dictionary-reading-sense">${s.pos.length ? `<span class="dictionary-reading-pos">${esc(chineseTerms(s.pos))}</span>` : ""}<p lang="en">${esc(s.glosses.join("; "))}</p>${s.tags.length || s.notes.length ? `<p class="dictionary-footnote" lang="en">${esc([...s.tags,...s.notes].join(" · "))}</p>` : ""}</div>`;
+  return `<section class="dictionary-readings"><div class="dictionary-section-title"><h4>字典讀音</h4><span>用法釋義為英文</span></div>
+    <p class="dictionary-footnote">依用法有不同讀音；課程發音請聽 Duolingo 音訊。</p>
+    <div class="dictionary-reading-grid">${entries.map(entry => `<article class="dictionary-reading-card"><h5 lang="ja">${esc(entry.reading)}</h5>
+      ${entry.senses[0] ? senseView(entry.senses[0]) : ""}${entry.senses.length > 1 ? `<details class="dictionary-expand"><summary>其他用法 <span>${entry.senses.length-1}</span></summary>${entry.senses.slice(1).map(senseView).join("")}</details>` : ""}</article>`).join("")}</div>
+    <footer class="dictionary-source">${dictionaryLink(`https://jisho.org/search/${encodeURIComponent(word.text)}`,"Jisho / JMdict")}</footer></section>`;
+}
 export function dictionaryView(result,word) {
   if (!result || result.status === "loading") return '<div class="dictionary-status" role="status"><span class="dictionary-spinner" aria-hidden="true"></span>正在查詢字典…</div>';
   if (result.status === "unsupported") return '<p class="dictionary-status">此語言目前顯示 Duolingo 釋義。</p>';
   if (result.status === "error") return `<div class="dictionary-status" role="status"><p>${esc(result.message)}</p><button type="button" class="secondary" data-dictionary-retry>重新查詢</button></div>`;
-  if (!result.candidates?.length) return '<p class="dictionary-status">暫時沒有對應的字典詞條。</p>';
-  return `<div class="dictionary-section-title"><h4>字典釋義</h4><span>含其他用法</span></div>${result.candidates.map(c=>dictionaryEntryView(c,word)).join("")}`;
+  const readings = dictionaryReadingsView(result.readingEntries, word);
+  if (!result.candidates?.length) return readings || '<p class="dictionary-status">暫時沒有對應的字典詞條。</p>';
+  return `${readings}<div class="dictionary-section-title"><h4>字典釋義</h4><span>含其他用法</span></div>${result.candidates.map(c=>dictionaryEntryView(c,word)).join("")}`;
 }

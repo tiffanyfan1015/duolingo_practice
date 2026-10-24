@@ -1,4 +1,6 @@
 const morphologyLabels = {
+  numeric: "數詞", suffix: "接尾詞", prefix: "接頭詞", "noun, used as a suffix": "名詞（作接尾詞）",
+  "adverb (fukushi)": "副詞", "noun which may take the genitive case particle 'no'": "名詞（可接の）",
   noun: "名詞", verb: "動詞", adj: "形容詞", adjective: "形容詞", adv: "副詞", intj: "感嘆詞", pron: "代名詞", prep: "介系詞",
   masculine: "陽性", feminine: "陰性", neuter: "中性", singular: "單數", plural: "複數", nominative: "主格", accusative: "受格", dative: "與格", genitive: "所有格",
   polite: "ます形（禮貌形）", "te-form": "て形（連接形）", negative: "否定形", past: "過去式", present: "現在式", future: "未來式", participle: "分詞",

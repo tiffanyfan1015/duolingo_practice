@@ -10,6 +10,8 @@ import {
   SyncError,
 } from "../server/sync/duolingo.ts";
 import worker from "../server/worker.ts";
+import { reusableProbes } from "../server/sync/incremental.ts";
+import { syncView } from "../web/src/ui/views/sync.mjs";
 
 function database() {
   const sql = new DatabaseSync(":memory:");
@@ -87,6 +89,113 @@ async function setup() {
   await repo.init();
   return { db, repo, service: syncService(repo, client()) };
 }
+
+async function complete(service, job) {
+  for (let i = 0; job.phase !== "done" && i < 30; i++) job = await service.step("de", job.id);
+  assert.equal(job.phase, "done");
+  return job;
+}
+async function readyForNext(repo) {
+  const old = await repo.get("de");
+  old.startedAt -= 16000;
+  await repo.save(old);
+}
+
+test("incremental sync persists reused probes, skips unchanged skills and refreshes meanings", async () => {
+  const {repo, service} = await setup();
+  await complete(service, await service.start("de"));
+  await readyForNext(repo);
+  const calls = [];
+  const api = {...client(), page: async (course, skills, start) => {
+    calls.push(skills.map(s=>s.skillId.id));
+    const result = await client().page(course,skills,start);
+    result.learnedLexemes = result.learnedLexemes.map(w=>({...w,translations:["新版釋義"]}));
+    return result;
+  }};
+  let job = await syncService(repo,api).start("de");
+  assert.equal(job.reused,2);
+  job = await syncService(repo,api).step("de",job.id);
+  assert.equal((await syncService(repo,api).start("de")).id,job.id);
+  await complete(syncService(repo,api),job);
+  assert.deepEqual(calls,[["a","b"],["a","b"]]);
+  assert.deepEqual((await repo.courses())[0].words[0].meanings,["新版釋義"]);
+  assert.deepEqual((await repo.courses())[0].words[0].units,["s1u1"]);
+});
+
+test("changed skills are queried by ID even when reused probes are not a prefix", async () => {
+  const {repo, service} = await setup();
+  await complete(service,await service.start("de"));
+  await readyForNext(repo);
+  const changed=structuredClone(profile), calls=[];
+  changed.currentCourse.skills[0].finishedLevels++;
+  const api={...client(),profile:async()=>changed,page:async(c,s,n)=>{
+    calls.push(s.map(x=>x.skillId.id)); return client().page(c,s,n);
+  }};
+  const next=syncService(repo,api), job=await next.start("de");
+  assert.equal(job.reused,1);
+  await complete(next,job);
+  assert.deepEqual(calls,[["a","b"],["a","b"],["a"]]);
+});
+
+test("new skills are queried while unchanged skill mappings are retained", async () => {
+  const {repo,service}=await setup();
+  await complete(service,await service.start("de"));
+  await readyForNext(repo);
+  const changed=structuredClone(profile), calls=[];
+  changed.currentCourse.skills.push({id:"c",finishedLevels:1});
+  const extra={text:"Neu",translations:["新"]};
+  const api={profile:async()=>changed,page:async(c,s,n)=>{
+    calls.push(s.map(x=>x.skillId.id));
+    return s.length===3?page([...words,extra]):page([extra]);
+  }};
+  const next=syncService(repo,api), job=await next.start("de");
+  assert.equal(job.reused,2);
+  await complete(next,job);
+  assert.deepEqual(calls,[["a","b","c"],["c"]]);
+  assert.equal((await repo.courses())[0].words.length,3);
+});
+
+test("forced sync, changed structure and incomplete snapshots fall back to full probes", async () => {
+  const {repo,service}=await setup();
+  await complete(service,await service.start("de"));
+  const old=await repo.get("de"), snapshot=courseState(profile,"de");
+  for (const modify of [
+    p=>{p.probes.pop();}, p=>{p.phase="units";},
+    p=>{p.course.id="other";}, p=>{p.units[0].title="changed";},
+    p=>{p.probes[0].words=["missing"];},
+    p=>{p.skills.push({skillId:{id:"removed"},finishedLevels:1,finishedSessions:0});p.probes.push({id:"removed",words:[]});},
+  ]) {
+    const previous=structuredClone(old);modify(previous);
+    assert.deepEqual(reusableProbes(snapshot,previous),[]);
+  }
+  const ignoredFilter=structuredClone(old);
+  ignoredFilter.probes.forEach(p=>{p.words=words.map(w=>w.text);});
+  assert.deepEqual(reusableProbes(snapshot,ignoredFilter),[]);
+  await readyForNext(repo);
+  const job=await service.start("de",true);
+  assert.equal(job.reused,0);
+  await complete(service,job);
+  assert.match(syncView({courseName:"德文",job:{...job,phase:"done",reused:1}}),/完整重新同步/);
+  assert.match(syncView({courseName:"德文",job:{...job,reused:1}}),/沿用 1 個/);
+});
+
+test("removed words and unexplained new words invalidate reused probes without endless retries", async () => {
+  for (const remove of [true,false]) {
+    const {repo,service}=await setup();
+    await complete(service,await service.start("de"));
+    await readyForNext(repo);
+    const extra={text:"Neu",translations:["新"]}, calls=[];
+    const api={...client(),page:async(c,s,n)=>{
+      calls.push(s.map(x=>x.skillId.id));
+      if(s.length===2)return page(remove?[words[0]]:[...words,extra]);
+      return page(s[0].skillId.id==="a"?[words[0]]:remove?[]:[words[1],extra]);
+    }};
+    const next=syncService(repo,api);
+    await complete(next,await next.start("de"));
+    assert.deepEqual(calls,remove?[["a","b"],["b"]]:[["a","b"],["a"],["b"]]);
+    assert.equal((await repo.courses())[0].words.length,remove?1:3);
+  }
+});
 
 test("mobile sync resumes, validates units and atomically publishes only the selected language", async () => {
   const { db, repo, service } = await setup();

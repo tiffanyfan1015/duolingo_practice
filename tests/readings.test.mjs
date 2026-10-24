@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { matchedJapaneseReading } from "../web/src/domain/dictionary.mjs";
+import { matchedJapaneseReading, matchedJapaneseReadings } from "../web/src/domain/dictionary.mjs";
+import { reading } from "../web/src/ui/views/shared.mjs";
+import { dictionaryView } from "../web/src/ui/views/dictionary.mjs";
 import { createDictionaryClient } from "../web/src/services/dictionary-client.mjs";
 import { createReadingController } from "../web/src/reading-controller.mjs";
 import { createReadingStore, accountStorage } from "../web/src/services/progress-store.mjs";
@@ -9,6 +11,31 @@ import { kanaPronunciation } from "../web/src/services/language-tools.mjs";
 const jisho = {data:[{japanese:[{word:"食べる",reading:"たべる"}],senses:[{parts_of_speech:["Ichidan verb"]}]}]};
 const word = text => ({id:`ja:${text}`,text,meanings:["吃"],units:[],readingPending:true});
 const tick = () => new Promise(resolve=>setTimeout(resolve,0));
+
+test("ambiguous readings retain their own senses without leaking other spellings or Wikipedia senses", async()=>{
+  const data = {data:[
+    {japanese:[{word:"時",reading:"とき"},{word:"秋",reading:"とき"}],senses:[
+      {english_definitions:["time"],parts_of_speech:["Noun"],restrictions:["時"]},
+      {english_definitions:["autumn"],restrictions:["秋"]},
+      {english_definitions:["Autumn"],parts_of_speech:["Wikipedia definition"]},
+    ]},
+    {japanese:[{word:"時",reading:"じ"}],senses:[{english_definitions:["o'clock"],parts_of_speech:["Suffix"]}]},
+    {japanese:[{word:"時間",reading:"じかん"}],senses:[]},
+  ]};
+  const entries = matchedJapaneseReadings(data,"時");
+  assert.deepEqual(entries.map(e=>e.reading),["とき","じ"]);
+  assert.deepEqual(entries[0].senses.map(s=>s.glosses),[["time"]]);
+  const client=createDictionaryClient({parse:()=>[],fetcher:async url=>Response.json(url.includes("jisho")?data:{})});
+  const result=await client.lookup("時","ja");
+  assert.equal(result.status,"ready");
+  assert.equal(result.pronunciation,null);
+  const html=dictionaryView(result,word("時"));
+  assert.match(html,/とき/); assert.match(html,/じ/); assert.match(html,/接尾詞/);
+  assert.match(html,/Jisho \/ JMdict/); assert.doesNotMatch(html,/暫時沒有|autumn|じかん/);
+  const placeholder=reading(word("時"),"ja",true);
+  assert.match(placeholder,/data-reading-word="ja:時" hidden/);
+  assert.doesNotMatch(placeholder,/讀音待補|undefined/);
+});
 
 test("dictionary readings match exact spelling and conjugation, rejecting unrelated and ambiguous readings",()=>{
   assert.equal(matchedJapaneseReading(jisho,"食べます"),"たべます");

@@ -1,5 +1,6 @@
 import type { SyncJob, SyncRepository, DuolingoClient, Catalog, CourseSelection } from "../types.ts";
 import { SyncError } from "./duolingo.ts";
+import { reusableProbes, finishProbePhase } from "./incremental.ts";
 import {
   courseState,
   fingerprint,
@@ -16,6 +17,7 @@ export function publicJob(job: SyncJob | null) {
     count: job.words.length,
     expected: job.page.expected,
     mapped: job.probes.length,
+    reused: job.reusedProbeIds?.length || 0,
     totalSkills: job.skills.length,
     updatedAt: job.updatedAt,
     completedAt: job.completedAt || null,
@@ -35,6 +37,7 @@ export function syncService(repo: SyncRepository, client: DuolingoClient, baseCa
       if (previous && Date.now() - previous.startedAt < 15000)
         throw new SyncError("請稍候 15 秒再重新開始同步。", 429);
       const snapshot = courseState(await client.profile(), target?.language || language, target);
+      const probes = restart ? [] : reusableProbes(snapshot, previous);
       const job: SyncJob = {
         id: crypto.randomUUID(),
         language,
@@ -44,7 +47,8 @@ export function syncService(repo: SyncRepository, client: DuolingoClient, baseCa
         phase: "words",
         page: emptyPage(),
         words: [],
-        probes: [],
+        probes,
+        reusedProbeIds: probes.map(p => p.id),
         startedAt: Date.now(),
         updatedAt: Date.now(),
       };
@@ -59,7 +63,7 @@ export function syncService(repo: SyncRepository, client: DuolingoClient, baseCa
         throw new SyncError("同步工作已超過一天，請重新開始。");
       if (job.phase === "words" || job.phase === "units") {
         const skills =
-          job.phase === "words" ? job.skills : [job.skills[job.probes.length]];
+          job.phase === "words" ? job.skills : [job.skills.find(s => !job.probes.some(p => p.id === s.skillId.id))!];
         job.page = appendPage(
           job.page,
           await client.page(job.course, skills, job.page.next),
@@ -69,13 +73,17 @@ export function syncService(repo: SyncRepository, client: DuolingoClient, baseCa
         if (job.page.next === null) {
           if (job.phase === "words") {
             job.phase = "units";
+            const words = new Set(job.words.map(w => w.text));
+            // Deleted words invalidate their cached skill results before mapping.
+            job.probes = job.probes.filter(p => p.words.every(w => words.has(w)));
+            job.reusedProbeIds = (job.reusedProbeIds || []).filter(id => job.probes.some(p => p.id === id));
           } else
             job.probes.push({
               id: skills[0].skillId.id,
               words: job.page.words.map((word) => word.text),
             });
           job.page = emptyPage();
-          if (job.probes.length === job.skills.length) job.phase = "verify";
+          finishProbePhase(job);
         }
       } else if (job.phase === "verify") {
         const snapshot = courseState(await client.profile(), target?.language || language, target);

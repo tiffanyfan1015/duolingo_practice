@@ -9,7 +9,7 @@ export function syncView({ courseName, busy, job, message, expanded = true }) {
   };
   return `<details class="sync-disclosure" ${expanded ? "open" : ""}><summary>同步 Duolingo${busy ? " · 同步中…" : ""}</summary><div class="sync-panel"><div><p>先在 Duolingo 切換到${esc(courseName)}課程；同步時保持此頁開啟。</p></div>
   <div class="sync-actions"><button class="primary" data-sync="continue" ${busy ? "disabled" : ""}>${busy ? "同步中…" : job && job.phase !== "done" ? "繼續同步" : "同步目前語言"}</button>
-  ${job && job.phase !== "done" ? `<button data-sync="restart" ${busy ? "disabled" : ""}>重新開始</button>` : ""}</div>
-  <p role="status">${job ? `${phase[job.phase] || ""} · ${job.count} 個字 · 已核對 ${job.mapped}/${job.totalSkills} 個技能` : ""}${message ? `<br>${esc(message)}` : ""}</p>
+  ${job ? `<button data-sync="restart" ${busy ? "disabled" : ""}>完整重新同步</button>` : ""}</div>
+  <p role="status">${job ? `${phase[job.phase] || ""} · ${job.count} 個字 · 已核對 ${job.mapped}/${job.totalSkills} 個技能${job.reused ? `（沿用 ${job.reused} 個）` : ""}` : ""}${message ? `<br>${esc(message)}` : ""}</p>
   </div></details>`;
 }
