@@ -8,6 +8,8 @@
 
 ## 啟用
 
+正式 Worker、自訂網域、GitHub 自動部署的設定與啟用狀態，統一見 [WORKERS_DEPLOY.md](WORKERS_DEPLOY.md)。以下說明帳號與 Secrets；完成這些設定不代表已連接 Git 自動部署。
+
 若只想先在本機看畫面，可執行 `npm run preview`（需要支援 `node:sqlite` 的 Node 24）。開啟 `http://127.0.0.1:8766/account`，示範帳號 `demo`、密碼 `demo-study-12345`，已連接模擬 Duolingo 並載入範例字庫。註冊測試的邀請碼為 `browser-test-invitation-code`。此入口只監聽本機，使用記憶體資料庫及合成 API 回應，不連接真實 Duolingo；不要貼入真實憑證。停止再啟動後帳號資料會重設。此示範不需要 Cloudflare 或安裝額外 npm 套件，勿當作正式部署入口。
 
 `wrangler.jsonc` 已設定 `MULTI_USER = "true"`。部署前配置真正的 D1 Database ID，以及以下 Worker Secrets：

@@ -1,30 +1,77 @@
 # GitHub → Cloudflare Workers 部署
 
-目前優先使用 Workers + Static Assets + D1。`wrangler.jsonc` 預設啟用多人模式，請先依 [多人部署與移轉指引](MULTI_USER.md) 設定 `CREDENTIAL_KEY`／`REGISTRATION_CODE`；以下 `owner`、`SITE_PASSWORD` 與 `DUOLINGO_JWT` 步驟只適用 `MULTI_USER="false"` 的單人模式。尚未因本次修改建立雲端資源或部署。
+正式網站使用 Workers + Static Assets + D1，多人模式已啟用。設定以根目錄 `wrangler.jsonc` 為準。
 
-1. Cloudflare 建立 D1 資料庫，名稱使用 `duolingo-vocab-db`。複製 Database ID。
-2. 修改專案 `wrangler.jsonc`：將 `REPLACE_WITH_D1_DATABASE_ID` 換成真實 Database ID；若資料庫名称不同，一併改 `database_name`。Database ID 不是密碼，可隨設定提交；不要填帳號 ID。
-3. 將程式連同 `wrangler.jsonc` 推到自己的 GitHub 私人 repository，保留 `.gitignore`。
-4. Cloudflare 建立 Worker、連接該 GitHub repository，選正式分支。Worker 名稱應與設定的 `cijian-private` 相同（也可以兩邊一起改名）。
-   - Build command：`npm ci && npm run build:cloud`
-   - 建置環境使用 Node.js 24 以上，可設定 `NODE_VERSION=24`。
-   - Deploy command：`npx wrangler@4 deploy`
-   - Root directory：專案位於 repository 最外層時留空或用介面預設值。
-   - 不用填写 Pages 的 output directory 欄位，資源目錄已由 `wrangler.jsonc` 指定為 `dist`。
-5. 在 Worker 的 Settings → Variables and Secrets 設定 **Secret**：
-   - `SITE_PASSWORD`：至少 20 字元的隨機專用密碼，登入帳號固定 `owner`。
-   - `DUOLINGO_JWT`：Duolingo 憑證。不要放在 GitHub 或前端。
-   若介面需要先部署才能設定 Secret，第一次顯示 503「Private site is not configured yet」是預期的保護行為。設定後依介面儲存／部署，使新版本生效。
-6. 查看 Worker 的 Bindings，確認 `DB` 指到自己的 D1，`ASSETS` 已存在。之後修改 D1 綁定也要更新 `wrangler.jsonc`，避免下次 Git 部署覆蓋設定。
-7. 手機開啟 Cloudflare 顯示的正式 `https://...workers.dev` 網址，使用 `owner` + 網站專用密碼登入。初始字庫可能為空；先在 Duolingo 切到德文，再於網站同步德文，日文同樣操作。
+| 項目 | 設定 |
+| --- | --- |
+| GitHub | `tiffanyfan1015/duolingo_practice` |
+| 正式分支 | `main` |
+| Worker | `duolingo-vocab` |
+| 網址 | https://duo-vocab.tiffanyfan.com |
+| D1 | `duolingo-vocab-db`，binding 為 `DB` |
+| 靜態資源 | `dist`，binding 為 `ASSETS` |
 
-安全設定：`run_worker_first: true` 使所有靜態資源先通過登入；不能只對 `/api/*` 啟用。建置輸出的 `.assetsignore` 排除舊 Pages 伺服器生成檔。不要改成只上傳靜態檔，否則登入及同步後端不會運作。
+## 自動部署
 
-驗證：未登入時網站與 `/api/catalog` 應要求登入；登入後能載入網站。完成一次德文／日文同步，關閉電腦後再用手機重新開啟。Duolingo 是否接受 Cloudflare IP 仍需真實部署驗證，403 不是程式測試可以排除的限制。
+選用 Cloudflare Workers Builds 直接連接 GitHub，無須另外加入 GitHub Actions 部署 workflow。同一正式環境只使用一條自動部署流程，避免重複部署。
 
-多人版的 FSRS 個人參數與複習紀錄已支援同帳號跨裝置同步；需要從舊本機網址備份再匯入正式網址一次。部署後請在兩台裝置登入同一帳號，確認筆記、收藏與一次複習可同步。`/api/study` 會自動建立所需 D1 表，不需要新 Secret 或付費訓練服務。正式單字詳情亦已整合按需字典 API。
+**設定狀態（2026-10-27）**：尚未啟用。現有 Cloudflare 工具連線可查詢建置，但建立 repository connection 被拒絕，缺少 `workers-ci.write`（Workers CI Write）。須重新授權後完成設定，或依下列步驟在控制台連接。提交這份文件不會啟用自動部署。
 
-官方文件：
-- https://developers.cloudflare.com/workers/static-assets/binding/
-- https://developers.cloudflare.com/workers/ci-cd/builds/configuration/
-- https://developers.cloudflare.com/d1/get-started/
+| Builds 欄位 | 預定值 |
+| --- | --- |
+| Production branch | `main` |
+| Root directory | `/` |
+| Build command | `npm ci && npm test && npm run test:build` |
+| Deploy command | `npx wrangler@4 deploy` |
+| Build variable | `NODE_VERSION=24` |
+| Branch includes | `main` |
+| Path includes | `*` |
+
+建置會安裝依賴、執行 Node 測試、型別檢查及部署產物整合測試。通過後才部署，失敗時正式網站保留原版本。其他分支不部署至正式環境。Workers 不需填 Pages 的 output directory；資源目錄已寫在 `wrangler.jsonc`。
+
+啟用後的流程：**修改 → commit → push 到 main → 等待 Build 與 Deploy 成功**。只有本機 commit 不會觸發；push 成功也不代表部署成功。
+
+### 首次連接或重新設定
+
+1. 在 Cloudflare 開啟既有的 `duolingo-vocab` → Settings → Builds → Connect repository。
+2. 選 GitHub 的 `tiffanyfan1015/duolingo_practice`；若尚未授權，讓 Cloudflare GitHub App 存取這個儲存庫。
+3. 設定上表欄位，選用有效的 Cloudflare build token，設定建置變數 `NODE_VERSION=24`。
+4. 儲存並執行第一次 build，確認部署 commit 與 GitHub `main` 相同。
+
+Git 連線、trigger、build token 與建置變數是 Cloudflare 雲端設定，不會只因提交 `wrangler.jsonc` 自動建立。若改用 GitHub Actions，還需設定 Cloudflare API token／account ID，並停用原 Builds 正式部署觸發器。
+
+## Worker Secrets 與資料
+
+正式多人模式使用 `CREDENTIAL_KEY` 與 `REGISTRATION_CODE`，設定於 Worker → Settings → Variables and Secrets。它們不是建置變數，也不需放進 GitHub。請保留既有 `CREDENTIAL_KEY`，不要因部署重新產生；詳細規則見 [MULTI_USER.md](MULTI_USER.md)。
+
+使用者在 `/account` 註冊、登入，並連接自己的 Duolingo。多人模式不使用共用 `owner` 帳號、`SITE_PASSWORD` 或 `DUOLINGO_JWT`。本機 `.env` 已被 Git 忽略，不會隨 push 上傳；未變更的正式 Secrets 不需每次重傳。
+
+D1 的 ID 已設在 `wrangler.jsonc`，沿用既有資料庫即可；程式按需建立資料表。`dist/` 不包含個人字庫，使用者字庫與學習紀錄存在 D1。`run_worker_first: true` 使資源先經 Worker 登入與路由檢查。
+
+## 手動部署與驗證
+
+使用 Node.js 24，在根目錄執行：
+
+```powershell
+npm ci
+npm test
+npm run test:build
+npx wrangler@4 deploy
+```
+
+首次使用 Wrangler 須先完成 `npx wrangler@4 login`。手動部署不會替你 commit／push；後續自動部署以 GitHub `main` 為準。
+
+部署後確認：
+
+1. Builds 顯示成功、commit 正確，Deployments 顯示新版本為 Active Deployment。
+2. `/account` 可開啟，未登入的 `/api/catalog` 不可讀取私人字庫。
+3. 登入後字庫與學習紀錄仍在，兩台裝置以同一帳號可同步。
+
+Duolingo 是否接受雲端請求，仍需實際同步確認。部署程式與使用者按「同步 Duolingo」更新字庫是不同操作。
+
+## 官方參考
+
+- [Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/)
+- [Builds 設定](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/)
+- [Builds API](https://developers.cloudflare.com/workers/ci-cd/builds/api-reference/)
+- [Worker Secrets](https://developers.cloudflare.com/workers/configuration/secrets/)

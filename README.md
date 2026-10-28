@@ -47,7 +47,9 @@ npm run preview
 
 ## 部署多人版
 
-目前 `wrangler.jsonc` 預設 `MULTI_USER = "true"`，使用 Cloudflare Workers 與 D1。部署前須填入真正的 D1 Database ID，並設定 `CREDENTIAL_KEY` 與 `REGISTRATION_CODE` Secrets。
+目前使用 Cloudflare Workers `duolingo-vocab` 與 D1，`wrangler.jsonc` 已設定正式 DB、自訂網域及 `MULTI_USER = "true"`。自動部署選用 Cloudflare Workers Builds 連接 GitHub `main`，啟用狀態與設定見 [WORKERS_DEPLOY.md](docs/WORKERS_DEPLOY.md)；只有 commit 或 push 不代表已部署。首次建立新環境才需要另設 D1 與 `CREDENTIAL_KEY`／`REGISTRATION_CODE` Secrets。
+
+手動部署：
 
 ```powershell
 npm ci
@@ -55,7 +57,7 @@ npm run build:cloud
 npx wrangler@4 deploy
 ```
 
-建置輸出為 `dist/`，預設不包含個人字庫。正式網站需使用 HTTPS。多人設定、憑證加密、資料隔離與舊資料移轉請閱讀 [MULTI_USER.md](docs/MULTI_USER.md)；GitHub 自動部署欄位見 [WORKERS_DEPLOY.md](docs/WORKERS_DEPLOY.md)。該文件中的 `owner`、`SITE_PASSWORD`、`DUOLINGO_JWT` 步驟僅適用舊單人模式，多人版使用自己的帳號與上述兩個 Secrets。
+建置輸出為 `dist/`，預設不包含個人字庫。正式網站需使用 HTTPS。多人設定、憑證加密、資料隔離與舊資料移轉請閱讀 [MULTI_USER.md](docs/MULTI_USER.md)。多人版使用自己的帳號，正式 Secrets 保存在 Worker，不隨 Git 上傳。
 
 尚未提供忘記密碼、帳號刪除、管理介面或 Duolingo 字庫背景自動同步。Duolingo 的內部 API 可能變更或拒絕雲端請求。
 
